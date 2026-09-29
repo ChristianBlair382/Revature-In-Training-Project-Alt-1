@@ -9,6 +9,7 @@ from .base import Base
 if TYPE_CHECKING:
     from .equipment import Equipment
     from .hand import Hand
+    from .supervisor import Supervisor
 
 class Farm(Base):
     __tablename__ = "farms"
@@ -19,6 +20,7 @@ class Farm(Base):
     capacity: Mapped[int] = mapped_column(Integer)
     supervisor_id: Mapped[int] = mapped_column(Integer, ForeignKey("supervisors.id"))
 
+    supervisor: Mapped["Supervisor"] = relationship(back_populates="farms")
     equipments: Mapped[list["Equipment"]] = relationship(back_populates="farm")
     hands: Mapped[list["Hand"]] = relationship(back_populates="farm")
 

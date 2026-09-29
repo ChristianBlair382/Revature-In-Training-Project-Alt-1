@@ -16,7 +16,7 @@ class Service_Report(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     file_url: Mapped[str] = mapped_column(Text, unique=True)
     notes: Mapped[str] = mapped_column(Text, nullable=True)
-    service_report_id: Mapped[int] = mapped_column(Integer, ForeignKey("field_jobs.id"))
+    field_job_id: Mapped[int] = mapped_column(Integer, ForeignKey("field_jobs.id"))
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     field_job: Mapped["Field_Job"] = relationship(back_populates="service_reports")

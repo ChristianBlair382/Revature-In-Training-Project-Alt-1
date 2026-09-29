@@ -20,14 +20,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(farms.router)
-app.include_router(equipments.router)
-app.include_router(field_jobs.router)
-app.include_router(service_reports.router)
-app.include_router(hands.router)
-app.include_router(supervisors.router)
-app.include_router(auth.router)
-
 @app.get("/health", tags=["health"])
 async def health_check() -> dict[str, str]:
     return {"status", "OK"}
@@ -35,3 +27,11 @@ async def health_check() -> dict[str, str]:
 @app.get("/version", tags=["version"])
 async def version_check() -> dict[str, str]:
     return {"version", app.version}
+
+app.include_router(farms.router)
+app.include_router(equipments.router)
+app.include_router(field_jobs.router)
+app.include_router(service_reports.router)
+app.include_router(hands.router)
+app.include_router(supervisors.router)
+app.include_router(auth.router)

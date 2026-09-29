@@ -8,7 +8,6 @@ from .base import Base
 
 if TYPE_CHECKING:
     from .farm import Farm
-    from .supervisor import Supervisor
     from .field_job import Field_Job
 
 class Hand(Base):
@@ -19,7 +18,6 @@ class Hand(Base):
     farm_id: Mapped[int] = mapped_column(Integer, ForeignKey("farms.id"))
 
     farm: Mapped["Farm"] = relationship(back_populates="hands")
-    supervisor: Mapped["Supervisor"] = relationship(back_populates="hands")
     field_jobs: Mapped[list["Field_Job"]] = relationship(back_populates="hand")
 
     def __repr__(self) -> str:

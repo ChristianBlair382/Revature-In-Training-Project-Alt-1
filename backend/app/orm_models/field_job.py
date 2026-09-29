@@ -49,3 +49,10 @@ class Field_Job(Base):
         if self.status == new_status:
             return
         self.status = new_status
+
+    def update_priority(self, new_priority: FIELD_JOB_PRIORITY) -> None:
+        if not isinstance(new_priority, FIELD_JOB_PRIORITY):
+            raise TypeError(f"Expected FieldJobPriority enum, got {type(new_status).__name__}")
+        if self.priority == new_priority:
+            return
+        self.priority = new_priority

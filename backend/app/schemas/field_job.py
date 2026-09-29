@@ -28,3 +28,7 @@ class Field_Job_Discrepency_Read(BaseModel):
 class Field_Job_Update_Status(BaseModel):
     status: FIELD_JOB_STATUS
     model_config = ConfigDict(from_attributes=True)
+
+class Field_Job_Update_Priority(BaseModel):
+    priority: FIELD_JOB_PRIORITY
+    model_config = ConfigDict(from_attributes=True)

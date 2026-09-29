@@ -16,8 +16,7 @@ class Supervisor(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(50))
 
-    farm: Mapped["Farm"] = relationship(back_populates="supervisors")
-    hands: Mapped[list["Hand"]] = relationship(back_populates="supervisor")
+    farms: Mapped[list["Farm"]] = relationship(back_populates="supervisor")
 
     def __repr__(self) -> str:
         return (f"Supervisor (ID = {self.id}, Name = {self.name})")

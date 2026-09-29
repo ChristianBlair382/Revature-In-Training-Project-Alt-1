@@ -50,3 +50,10 @@ class Equipment(Base):
 
     def needs_maintenance(self) -> bool:
         return self.status == EQUIPMENT_STATUS.MAINTENANCE
+
+    def update_status(self, new_status: EQUIPMENT_STATUS) -> None:
+        if not isinstance(new_status, EQUIPMENT_STATUS):
+            raise TypeError(f"Expected EquipmentStatus enum, got {type(new_status).__name__}")
+        if self.status == new_status:
+            return
+        self.status = new_status
