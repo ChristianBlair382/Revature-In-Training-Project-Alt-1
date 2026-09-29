@@ -1,0 +1,18 @@
+from pydantic import BaseModel, ConfigDict, Field
+
+from app.orm_models.enums import USER_ROLE
+
+class User_Base(BaseModel):
+    username: str = Field(min_length=1, max_length=50)
+    role: USER_ROLE = USER_ROLE.AUD
+
+class User_Create(User_Base):
+    password: str = Field(min_length=8)
+
+class User_Read(User_Base):
+    id: int
+    model_config = ConfigDict(from_attributes=True)
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
