@@ -22,11 +22,11 @@ app.add_middleware(
 
 @app.get("/health", tags=["health"])
 async def health_check() -> dict[str, str]:
-    return {"status", "OK"}
+    return {"status": "OK"}
 
 @app.get("/version", tags=["version"])
 async def version_check() -> dict[str, str]:
-    return {"version", app.version}
+    return {"version": app.version}
 
 app.include_router(farms.router)
 app.include_router(equipments.router)

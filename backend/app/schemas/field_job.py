@@ -3,7 +3,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.orm_models.enums import FIELD_JOB_STATUS, FIELD_JOB_PRIORITY
 
 class Field_Job_Base(BaseModel):
-    title: str = Field(min_length=1, max_digits=50)
+    title: str = Field(min_length=1, max_length=50)
     equipment_id: int
     hand_id: int
     priority: FIELD_JOB_PRIORITY = FIELD_JOB_PRIORITY.MEDIUM
