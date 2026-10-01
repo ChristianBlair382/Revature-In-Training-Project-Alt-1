@@ -9,3 +9,6 @@ class Supervisor_Create(Supervisor_Base):
 class Supervisor_Read(Supervisor_Base):
     id: int
     model_config = ConfigDict(from_attributes=True)
+
+class Supervisor_Update(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=50)

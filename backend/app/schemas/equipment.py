@@ -20,3 +20,10 @@ class Equipment_Read(Equipment_Base):
 class Equipment_Update_Status(BaseModel):
     status: EQUIPMENT_STATUS
     model_config = ConfigDict(from_attributes=True)
+
+class Equipment_Update(BaseModel):
+    serial_num: str | None = Field(default=None, min_length=1, max_length=50)
+    model: str | None = Field(default=None, min_length=1, max_length=50)
+    fuel_lvl: Decimal | None = Field(default=None, ge=0, le=100)
+    farm_id: int | None = None
+    status: EQUIPMENT_STATUS | None = None

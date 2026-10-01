@@ -13,3 +13,8 @@ class Service_Report_Read(Service_Report_Base):
     id: int
     created_at: datetime
     model_config = ConfigDict(from_attributes=True)
+
+class Service_Report_Update(BaseModel):
+    field_job_id: int | None = None
+    file_url: str | None = Field(default=None, min_length=1)
+    notes: str | None = None

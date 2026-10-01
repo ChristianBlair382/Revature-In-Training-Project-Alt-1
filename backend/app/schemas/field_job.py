@@ -32,3 +32,10 @@ class Field_Job_Update_Status(BaseModel):
 class Field_Job_Update_Priority(BaseModel):
     priority: FIELD_JOB_PRIORITY
     model_config = ConfigDict(from_attributes=True)
+
+class Field_Job_Update(BaseModel):
+    title: str | None = Field(default=None, min_length=1, max_length=50)
+    equipment_id: int | None = None
+    hand_id: int | None = None
+    priority: FIELD_JOB_PRIORITY | None = None
+    status: FIELD_JOB_STATUS | None = None

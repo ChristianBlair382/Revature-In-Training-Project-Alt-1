@@ -1,6 +1,8 @@
 from app.config import settings
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from sqlalchemy.exc import IntegrityError
 
 from .routers import auth, equipments, farms, field_jobs, hands, service_reports, supervisors
 
@@ -35,3 +37,17 @@ app.include_router(service_reports.router)
 app.include_router(hands.router)
 app.include_router(supervisors.router)
 app.include_router(auth.router)
+
+@app.exception_handler(IntegrityError)
+async def integrity_error_handler(request: Request, exc: IntegrityError) -> JSONResponse:
+    return JSONResponse(
+        status_code=409,
+        content={"detail": "Database constraint violation."}
+    )
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Unknown error detected. Please see the developer console for more details."}
+    )

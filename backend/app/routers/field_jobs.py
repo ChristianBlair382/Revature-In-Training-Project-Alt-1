@@ -1,10 +1,25 @@
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends, Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies import get_db, get_current_user, require_role
-from app.orm_models import Field_Job, FIELD_JOB_STATUS, FIELD_JOB_PRIORITY, Equipment, Hand, User, USER_ROLE
-from app.schemas import Field_Job_Create, Field_Job_Read, Field_Job_Discrepency_Read, Field_Job_Update_Status, Field_Job_Update_Priority
+from app.orm_models import (
+    Field_Job,
+    FIELD_JOB_STATUS, 
+    FIELD_JOB_PRIORITY, 
+    Equipment, 
+    Hand, 
+    User, 
+    USER_ROLE
+)
+from app.schemas import (
+    Field_Job_Create, 
+    Field_Job_Read, 
+    Field_Job_Discrepency_Read, 
+    Field_Job_Update_Status, 
+    Field_Job_Update_Priority,
+    Field_Job_Update
+)
 
 router = APIRouter(prefix="/field_jobs", tags=["field_jobs"])
 
@@ -21,7 +36,7 @@ async def list_field_jobs(
 
     return list(output.scalars().all())
 
-@router.get("/{field_job.id}", response_model=Field_Job_Read)
+@router.get("/{field_job_id}", response_model=Field_Job_Read)
 async def find_field_job_by_id(
     field_job_id: int,
     db: AsyncSession = Depends(get_db),
@@ -65,7 +80,7 @@ async def isolate_colocation_discrepencies(
 
 # PATCH Routers
 
-@router.patch("/{field_job.id}/status", response_model=Field_Job_Read)
+@router.patch("/{field_job_id}/status", response_model=Field_Job_Read)
 async def update_field_job_status(
     field_job_id: int,
     payload: Field_Job_Update_Status,
@@ -85,7 +100,7 @@ async def update_field_job_status(
     await db.refresh(target_field_job)
     return target_field_job
 
-@router.patch("/{field_job.id}/priority", response_model=Field_Job_Read)
+@router.patch("/{field_job_id}/priority", response_model=Field_Job_Read)
 async def update_field_job_priority(
     field_job_id: int,
     payload: Field_Job_Update_Priority,
@@ -105,6 +120,28 @@ async def update_field_job_priority(
     await db.refresh(target_field_job)
     return target_field_job
 
+@router.patch("/{field_job_id}", response_model=Field_Job_Read)
+async def update_field_job(
+    field_job_id: int,
+    payload: Field_Job_Update,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(require_role(USER_ROLE.FOA))
+):
+    target_field_job = await db.get(Field_Job, field_job_id)
+    if (not target_field_job):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Field Job '{field_job_id}' does not exist."
+        )
+
+    changes = payload.model_dump(exclude_unset=True)
+    for field, value in changes.items():
+        setattr(target_field_job, field, value)
+
+    await db.commit()
+    await db.refresh(target_field_job)
+    return target_field_job
+
 # POST Routers
 
 @router.post("", response_model=Field_Job_Read, status_code=status.HTTP_201_CREATED)
@@ -118,3 +155,22 @@ async def create_new_field_job(
     await db.commit()
     await db.refresh(new_field_job)
     return new_field_job
+
+# DELETE Routers
+
+@router.delete("/{target_field_job_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_field_job(
+    target_field_job_id: int,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(require_role(USER_ROLE.FOA))
+):
+    target_field_job = await db.get(Field_Job, target_field_job_id)
+    if (not target_field_job):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Field Job '{target_field_job_id}' does not exist."
+        )
+
+    await db.delete(target_field_job)
+    await db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

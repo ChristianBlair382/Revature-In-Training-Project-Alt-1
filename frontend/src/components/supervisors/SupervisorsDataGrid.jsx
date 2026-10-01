@@ -88,7 +88,7 @@ export default function SupervisorsDataGrid({onSuccess}) {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
-                    <Button variant="contained" onClick={handleCreate}>Create</Button>
+                    <Button variant="contained" onClick={handleCreate}>Add</Button>
                 </DialogActions>
             </Dialog>
         </Box>

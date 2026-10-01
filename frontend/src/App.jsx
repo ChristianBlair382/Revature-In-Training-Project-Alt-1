@@ -15,10 +15,13 @@ import FieldJobsDataGrid from "./components/field_jobs/FieldJobsDataGrid.jsx";
 import ServiceReportsDataGrid from "./components/service_reports/ServiceReportsDataGrid.jsx";
 import HandsDataGrid from "./components/hands/HandsDataGrid.jsx";
 import SupervisorsDataGrid from "./components/supervisors/SupervisorsDataGrid.jsx";
+import UsersDataGrid from "./components/users/UsersDataGrid.jsx";
 
 function Dashboard() {
   const {user, logout} = useAuth()
   const [notification, setNotification] = useState('')
+
+  const isFOA = user?.role === 'Field_Operations_Admin' || user?.role === 'FOA';
 
   return (
     <>
@@ -90,17 +93,21 @@ function Dashboard() {
         <Box sx={{mb: 4}}>
           <SupervisorsDataGrid onSuccess={setNotification} />
         </Box>
-        <Typography
-          sx={{color: "black"}}
-          variant="h5"
-          component="h2"
-          gutterBottom
-        >
-          Users
-        </Typography>
-        <Box sx={{mb: 4}}>
-
-        </Box>
+        { isFOA &&
+          <>
+            <Typography
+            sx={{color: "black"}}
+            variant="h5"
+            component="h2"
+            gutterBottom
+            >
+              Users
+            </Typography>
+            <Box sx={{mb: 4}}>
+              <UsersDataGrid onSuccess={setNotification}/>
+            </Box>
+          </>
+        }
       </Container>
 
       <Snackbar 
