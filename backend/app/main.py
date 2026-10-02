@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError
 
-from .routers import auth, equipments, farms, field_jobs, hands, service_reports, supervisors
+from .routers import auth, equipments, farms, field_jobs, hands, service_reports, supervisors, users
 
 FRONTEND_ORIGIN = settings.frontend_origin
 
@@ -37,6 +37,7 @@ app.include_router(service_reports.router)
 app.include_router(hands.router)
 app.include_router(supervisors.router)
 app.include_router(auth.router)
+app.include_router(users.router)
 
 @app.exception_handler(IntegrityError)
 async def integrity_error_handler(request: Request, exc: IntegrityError) -> JSONResponse:

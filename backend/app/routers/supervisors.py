@@ -68,7 +68,7 @@ async def create_new_supervisor(
     db: AsyncSession = Depends(get_db),
     _: User = Depends(require_role(USER_ROLE.FOA))
 ):
-    new_supervisor = Supervisor(**payload.model_dump)
+    new_supervisor = Supervisor(**payload.model_dump())
     db.add(new_supervisor)
     await db.commit()
     await db.refresh(new_supervisor)

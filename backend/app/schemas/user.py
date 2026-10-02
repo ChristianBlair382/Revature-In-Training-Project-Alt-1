@@ -13,6 +13,11 @@ class User_Read(User_Base):
     id: int
     model_config = ConfigDict(from_attributes=True)
 
+class User_Update(BaseModel):
+    username: str | None = Field(default=None, min_length=1, max_length=50)
+    password: str = Field(min_length=8)
+    role: USER_ROLE | None = None
+
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"

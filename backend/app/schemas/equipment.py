@@ -15,6 +15,7 @@ class Equipment_Create(Equipment_Base):
 
 class Equipment_Read(Equipment_Base):
     id: int
+    low_fuel: bool
     model_config = ConfigDict(from_attributes=True)
 
 class Equipment_Update_Status(BaseModel):

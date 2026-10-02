@@ -62,7 +62,7 @@ async def create_new_farm(
     db: AsyncSession = Depends(get_db),
     _: User = Depends(require_role(USER_ROLE.FOA))
 ):
-    new_farm = Farm(**payload.model_dump)
+    new_farm = Farm(**payload.model_dump())
     db.add(new_farm)
     await db.commit()
     await db.refresh(new_farm)

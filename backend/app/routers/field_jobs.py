@@ -150,7 +150,7 @@ async def create_new_field_job(
     db: AsyncSession = Depends(get_db),
     _: User = Depends(require_role(USER_ROLE.FOA))
 ):
-    new_field_job = Field_Job(**payload.model_dump)
+    new_field_job = Field_Job(**payload.model_dump())
     db.add(new_field_job)
     await db.commit()
     await db.refresh(new_field_job)

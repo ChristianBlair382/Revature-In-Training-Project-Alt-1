@@ -68,7 +68,7 @@ async def create_new_hand(
     db: AsyncSession = Depends(get_db),
     _: User = Depends(require_role(USER_ROLE.FOA))
 ):
-    new_hand = Hand(**payload.model_dump)
+    new_hand = Hand(**payload.model_dump())
     db.add(new_hand)
     await db.commit()
     await db.refresh(new_hand)

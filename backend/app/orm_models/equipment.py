@@ -48,6 +48,10 @@ class Equipment(Base):
         limit = threshold if threshold is not None else Equipment.LOW_FUEL_THRESHOLD
         return self.fuel_lvl <= limit
 
+    @property
+    def low_fuel(self) -> bool:
+        return self.is_low_fuel()
+
     def needs_maintenance(self) -> bool:
         return self.status == EQUIPMENT_STATUS.MAINTENANCE
 

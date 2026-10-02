@@ -88,7 +88,7 @@ async def create_new_equipment(
     db: AsyncSession = Depends(get_db),
     _: User = Depends(require_role(USER_ROLE.FOA))
 ):
-    new_equipment = Equipment(**payload.model_dump)
+    new_equipment = Equipment(**payload.model_dump())
     db.add(new_equipment)
     await db.commit()
     await db.refresh(new_equipment)
