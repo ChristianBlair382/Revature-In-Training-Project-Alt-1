@@ -157,7 +157,18 @@ export default function ServiceReportsDataGrid({onSuccess}) {
     return (
         <Box>
             <Box>
-                <DataGrid rows={service_reports} columns={columns} getRowId={(row) => row.id}/>
+                <DataGrid 
+                    rows={service_reports} 
+                    columns={columns} 
+                    getRowId={(row) => row.id}
+                    initialState={{
+                        pagination: {
+                            paginationModel: {
+                                pageSize: 5,
+                            },
+                        },
+                    }}
+                />
             </Box>
             {isAdmin && (
                 <Button

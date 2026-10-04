@@ -161,7 +161,18 @@ export default function FarmsDataGrid({onSuccess}) {
     return (
         <Box>
             <Box>
-                <DataGrid rows={farms} columns={columns} getRowId={(row) => row.id}/>
+                <DataGrid 
+                    rows={farms} 
+                    columns={columns} 
+                    getRowId={(row) => row.id}
+                    initialState={{
+                        pagination: {
+                            paginationModel: {
+                                pageSize: 5,
+                            },
+                        },
+                    }}
+                />
             </Box>
             {isAdmin && (
                 <Button

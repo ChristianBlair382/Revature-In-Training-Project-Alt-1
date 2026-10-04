@@ -8,7 +8,11 @@ import {
   CardContent,
   CircularProgress,
   List,
-  ListItem
+  ListItem,
+  ListItemIcon,
+  ListItemButton,
+  ListItemText,
+  Drawer
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
@@ -23,9 +27,20 @@ import HandsDataGrid from "./components/hands/HandsDataGrid.jsx";
 import SupervisorsDataGrid from "./components/supervisors/SupervisorsDataGrid.jsx";
 import UsersDataGrid from "./components/users/UsersDataGrid.jsx";
 
+import GridViewIcon from '@mui/icons-material/GridView';
+import WarehouseIcon from '@mui/icons-material/Warehouse';
+import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
+import GroupsIcon from '@mui/icons-material/Groups';
+import EngineeringIcon from '@mui/icons-material/Engineering';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+
 function Dashboard() {
   const {user, logout} = useAuth()
   const [notification, setNotification] = useState('')
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [selectedPage, setSelectedPage] = useState('summaries')
   const [completionSummary, setCompletionSummary] = useState([])
   const [completionSummaryLoading, setCompletionSummaryLoading] = useState(true)
   const [completionSummaryError, setCompletionSummaryError] = useState(false)
@@ -38,6 +53,89 @@ function Dashboard() {
   const [completionRefreshKey, setCompletionRefreshKey] = useState(0)
 
   const isFOA = user?.role === 'Field_Operations_Admin' || user?.role === 'FOA';
+  const toggleDrawer = (newOpen) => () => {
+    setDrawerOpen(newOpen);
+  };
+  const displaySelectedPage = (string) => () => {
+    setSelectedPage(string)
+  }
+  
+
+  // DRAWER CONSTRUCT
+  const DrawerList = (
+    <Box sx={{ width: 300 }} role="presentation" onClick={toggleDrawer(false)}>
+      <List>
+        <ListItem>
+          <ListItemButton color="inherit" onClick={displaySelectedPage('summaries')}>
+            <ListItemIcon color="secondary">
+              <GridViewIcon />
+            </ListItemIcon>
+            <ListItemText primary="Dashboard"/>
+          </ListItemButton>
+        </ListItem>
+        <ListItem>
+          <ListItemButton color="inherit" onClick={displaySelectedPage('farms')}>
+            <ListItemIcon color="secondary">
+              <WarehouseIcon />
+            </ListItemIcon>
+            <ListItemText primary="Farms"/>
+          </ListItemButton>
+        </ListItem>
+        <ListItem>
+          <ListItemButton color="inherit" onClick={displaySelectedPage('equipments')}>
+            <ListItemIcon color="secondary">
+              <PrecisionManufacturingIcon />
+            </ListItemIcon>
+            <ListItemText primary="Equipments"/>
+          </ListItemButton>
+        </ListItem>
+        <ListItem>
+          <ListItemButton color="inherit" onClick={displaySelectedPage('field_jobs')}>
+            <ListItemIcon color="secondary">
+              <AssignmentIcon />
+            </ListItemIcon>
+            <ListItemText primary="Field Jobs"/>
+          </ListItemButton>
+        </ListItem>
+        <ListItem>
+          <ListItemButton color="inherit" onClick={displaySelectedPage('service_reports')}>
+            <ListItemIcon color="secondary">
+              <ReceiptLongIcon />
+            </ListItemIcon>
+            <ListItemText primary="Service Reports"/>
+          </ListItemButton>
+        </ListItem>
+        <ListItem>
+          <ListItemButton color="inherit" onClick={displaySelectedPage('hands')}>
+            <ListItemIcon color="secondary">
+              <GroupsIcon />
+            </ListItemIcon>
+            <ListItemText primary="Hands"/>
+          </ListItemButton>
+        </ListItem>
+        <ListItem>
+          <ListItemButton color="inherit" onClick={displaySelectedPage('supervisors')}>
+            <ListItemIcon color="secondary">
+              <EngineeringIcon />
+            </ListItemIcon>
+            <ListItemText primary="Supervisors"/>
+          </ListItemButton>
+        </ListItem>
+        { isFOA && (
+          <>
+            <ListItem>
+              <ListItemButton color="inherit" onClick={displaySelectedPage('users')}>
+                <ListItemIcon color="secondary">
+                  <AccountCircleIcon />
+                </ListItemIcon>
+                <ListItemText primary="Users"/>
+              </ListItemButton>
+            </ListItem>
+          </>
+        )}
+      </List>
+    </Box>
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -167,152 +265,181 @@ function Dashboard() {
 
   return (
     <>
-      <AppHeader username={user?.sub} role={user?.role} onLogout={logout} />
-      <Box sx={{display: 'grid', gridTemplateColumns: {xs: '1fr', md: 'repeat(3, minmax(0, 1fr))'}, gap: 2, px: 3, py: 2}}>
-        <Card variant="outlined">
-          <CardContent>
-            <Typography variant="h6" component="h2" sx={{color: 'black'}}>
-              Completed Field Jobs by Equipment Model
+      <AppHeader username={user?.sub} role={user?.role} onLogout={logout} onDrawerClick={toggleDrawer(true)}/>
+      <Drawer open={drawerOpen} onClose={toggleDrawer(false)}>
+        {DrawerList}
+      </Drawer>
+      {selectedPage === 'summaries' && (
+        <Box sx={{display: 'grid', gridTemplateColumns: {xs: '1fr', md: 'repeat(3, minmax(0, 1fr))'}, gap: 2, px: 3, py: 2, padding: 4}}>
+          <Card variant="outlined">
+            <CardContent>
+              <Typography variant="h6" component="h2" sx={{color: 'black'}}>
+                Completed Field Jobs by Equipment Model
+              </Typography>
+              {completionSummaryLoading ? (
+                <CircularProgress size={24} sx={{mt: 2}} />
+              ) : completionSummaryError ? (
+                <Alert severity="error" sx={{mt: 2}}>Could not load equipment completion data.</Alert>
+              ) : completionSummary.length === 0 ? (
+                <Typography sx={{mt: 2}}>No equipment found.</Typography>
+              ) : (
+                <List disablePadding sx={{mt: 1}}>
+                  {completionSummary.map(({model, completed, total, percentage}) => (
+                    <ListItem key={model} divider disableGutters sx={{gap: 2}}>
+                      <Typography sx={{flex: 1}}>{model}</Typography>
+                      <Typography aria-label={`${completed} of ${total} equipment have completed field jobs`}>
+                        {percentage}%
+                      </Typography>
+                    </ListItem>
+                  ))}
+                </List>
+              )}
+            </CardContent>
+          </Card>
+          <Card variant="outlined">
+            <CardContent>
+              <Typography variant="h6" component="h2" sx={{color: 'black'}}>
+                Farms with 30%+ Equipment in Maintenance
+              </Typography>
+              {maintenanceFarmSummaryLoading ? (
+                <CircularProgress size={24} sx={{mt: 2}} />
+              ) : maintenanceFarmSummaryError ? (
+                <Alert severity="error" sx={{mt: 2}}>Could not load farm maintenance data.</Alert>
+              ) : maintenanceFarmSummary.length === 0 ? (
+                <Typography sx={{mt: 2}}>No farms meet the maintenance threshold.</Typography>
+              ) : (
+                <List disablePadding sx={{mt: 1}}>
+                  {maintenanceFarmSummary.map(({name, maintenance, total, percentage}) => (
+                    <ListItem key={name} divider disableGutters sx={{gap: 2}}>
+                      <Typography sx={{flex: 1}}>{name}</Typography>
+                      <Typography aria-label={`${maintenance} of ${total} equipment are in maintenance`}>
+                        {percentage}%
+                      </Typography>
+                    </ListItem>
+                  ))}
+                </List>
+              )}
+            </CardContent>
+          </Card>
+          <Card variant="outlined">
+            <CardContent>
+              <Typography variant="h6" component="h2" sx={{color: 'black'}}>
+                Hands with In-Progress Field Jobs by Supervisor
+              </Typography>
+              {supervisorHandSummaryLoading ? (
+                <CircularProgress size={24} sx={{mt: 2}} />
+              ) : supervisorHandSummaryError ? (
+                <Alert severity="error" sx={{mt: 2}}>Could not load supervisor hand data.</Alert>
+              ) : supervisorHandSummary.length === 0 ? (
+                <Typography sx={{mt: 2}}>No farm supervisors found.</Typography>
+              ) : (
+                <List disablePadding sx={{mt: 1}}>
+                  {supervisorHandSummary.map(({id, name, handCount}) => (
+                    <ListItem key={id} divider disableGutters sx={{gap: 2}}>
+                      <Typography sx={{flex: 1}}>{name}</Typography>
+                      <Typography aria-label={`${handCount} hands have in-progress field jobs`}>
+                        {handCount}
+                      </Typography>
+                    </ListItem>
+                  ))}
+                </List>
+              )}
+            </CardContent>
+          </Card>
+        </Box>
+      )}
+      <Container sx={{ padding: 4 }}>
+        { selectedPage === 'farms' && (
+          <>
+            <Typography
+              sx={{color: "black"}}
+              variant="h5"
+              component="h2"
+              gutterBottom
+            >
+              Farms
             </Typography>
-            {completionSummaryLoading ? (
-              <CircularProgress size={24} sx={{mt: 2}} />
-            ) : completionSummaryError ? (
-              <Alert severity="error" sx={{mt: 2}}>Could not load equipment completion data.</Alert>
-            ) : completionSummary.length === 0 ? (
-              <Typography sx={{mt: 2}}>No equipment found.</Typography>
-            ) : (
-              <List disablePadding sx={{mt: 1}}>
-                {completionSummary.map(({model, completed, total, percentage}) => (
-                  <ListItem key={model} divider disableGutters sx={{gap: 2}}>
-                    <Typography sx={{flex: 1}}>{model}</Typography>
-                    <Typography aria-label={`${completed} of ${total} equipment have completed field jobs`}>
-                      {percentage}%
-                    </Typography>
-                  </ListItem>
-                ))}
-              </List>
-            )}
-          </CardContent>
-        </Card>
-        <Card variant="outlined">
-          <CardContent>
-            <Typography variant="h6" component="h2" sx={{color: 'black'}}>
-              Farms with 30%+ Equipment in Maintenance
+            <Box sx={{mb: 4}}>
+              <FarmsDataGrid onSuccess={handleGridSuccess} />
+            </Box>
+          </>
+        )}
+        { selectedPage === 'equipments' && (
+          <>
+            <Typography
+            sx={{color: "black"}}
+            variant="h5"
+            component="h2"
+            gutterBottom
+            >
+              Equipments
             </Typography>
-            {maintenanceFarmSummaryLoading ? (
-              <CircularProgress size={24} sx={{mt: 2}} />
-            ) : maintenanceFarmSummaryError ? (
-              <Alert severity="error" sx={{mt: 2}}>Could not load farm maintenance data.</Alert>
-            ) : maintenanceFarmSummary.length === 0 ? (
-              <Typography sx={{mt: 2}}>No farms meet the maintenance threshold.</Typography>
-            ) : (
-              <List disablePadding sx={{mt: 1}}>
-                {maintenanceFarmSummary.map(({name, maintenance, total, percentage}) => (
-                  <ListItem key={name} divider disableGutters sx={{gap: 2}}>
-                    <Typography sx={{flex: 1}}>{name}</Typography>
-                    <Typography aria-label={`${maintenance} of ${total} equipment are in maintenance`}>
-                      {percentage}%
-                    </Typography>
-                  </ListItem>
-                ))}
-              </List>
-            )}
-          </CardContent>
-        </Card>
-        <Card variant="outlined">
-          <CardContent>
-            <Typography variant="h6" component="h2" sx={{color: 'black'}}>
-              Hands with In-Progress Field Jobs by Supervisor
+            <Box sx={{mb: 4}}>
+              <EquipmentsDataGrid onSuccess={handleGridSuccess} />
+            </Box>
+          </>
+        )}
+        { selectedPage === 'field_jobs' && (
+          <>
+            <Typography
+              sx={{color: "black"}}
+              variant="h5"
+              component="h2"
+              gutterBottom
+            >
+              Field Jobs
             </Typography>
-            {supervisorHandSummaryLoading ? (
-              <CircularProgress size={24} sx={{mt: 2}} />
-            ) : supervisorHandSummaryError ? (
-              <Alert severity="error" sx={{mt: 2}}>Could not load supervisor hand data.</Alert>
-            ) : supervisorHandSummary.length === 0 ? (
-              <Typography sx={{mt: 2}}>No farm supervisors found.</Typography>
-            ) : (
-              <List disablePadding sx={{mt: 1}}>
-                {supervisorHandSummary.map(({id, name, handCount}) => (
-                  <ListItem key={id} divider disableGutters sx={{gap: 2}}>
-                    <Typography sx={{flex: 1}}>{name}</Typography>
-                    <Typography aria-label={`${handCount} hands have in-progress field jobs`}>
-                      {handCount}
-                    </Typography>
-                  </ListItem>
-                ))}
-              </List>
-            )}
-          </CardContent>
-        </Card>
-      </Box>
-      <Container>
-        <Typography
-          sx={{color: "black"}}
-          variant="h5"
-          component="h2"
-          gutterBottom
-        >
-          Farms
-        </Typography>
-        <Box sx={{mb: 4}}>
-          <FarmsDataGrid onSuccess={handleGridSuccess} />
-        </Box>
-        <Typography
-          sx={{color: "black"}}
-          variant="h5"
-          component="h2"
-          gutterBottom
-        >
-          Equipments
-        </Typography>
-        <Box sx={{mb: 4}}>
-          <EquipmentsDataGrid onSuccess={handleGridSuccess} />
-        </Box>
-        <Typography
-          sx={{color: "black"}}
-          variant="h5"
-          component="h2"
-          gutterBottom
-        >
-          Field Jobs
-        </Typography>
-        <Box sx={{mb: 4}}>
-          <FieldJobsDataGrid onSuccess={handleGridSuccess} />
-        </Box>
-        <Typography
-          sx={{color: "black"}}
-          variant="h5"
-          component="h2"
-          gutterBottom
-        >
-          Service Reports
-        </Typography>
-        <Box sx={{mb: 4}}>
-          <ServiceReportsDataGrid onSuccess={handleGridSuccess} />
-        </Box>
-        <Typography
-          sx={{color: "black"}}
-          variant="h5"
-          component="h2"
-          gutterBottom
-        >
-          Hands
-        </Typography>
-        <Box sx={{mb: 4}}>
-          <HandsDataGrid onSuccess={handleGridSuccess} />
-        </Box>
-        <Typography
-          sx={{color: "black"}}
-          variant="h5"
-          component="h2"
-          gutterBottom
-        >
-          Supervisors
-        </Typography>
-        <Box sx={{mb: 4}}>
-          <SupervisorsDataGrid onSuccess={handleGridSuccess} />
-        </Box>
-        { isFOA &&
+            <Box sx={{mb: 4}}>
+              <FieldJobsDataGrid onSuccess={handleGridSuccess} />
+            </Box>
+          </>
+        )}
+        { selectedPage === 'service_reports' && (
+          <>
+            <Typography
+              sx={{color: "black"}}
+              variant="h5"
+              component="h2"
+              gutterBottom
+            >
+              Service Reports
+            </Typography>
+            <Box sx={{mb: 4}}>
+              <ServiceReportsDataGrid onSuccess={handleGridSuccess} />
+            </Box>
+          </>
+        )}
+        { selectedPage === 'hands' && (
+          <>
+            <Typography
+              sx={{color: "black"}}
+              variant="h5"
+              component="h2"
+              gutterBottom
+            >
+              Hands
+            </Typography>
+            <Box sx={{mb: 4}}>
+              <HandsDataGrid onSuccess={handleGridSuccess} />
+            </Box>
+          </>
+        )}
+        { selectedPage === 'supervisors' && (
+          <>
+            <Typography
+              sx={{color: "black"}}
+              variant="h5"
+              component="h2"
+              gutterBottom
+            >
+              Supervisors
+            </Typography>
+            <Box sx={{mb: 4}}>
+              <SupervisorsDataGrid onSuccess={handleGridSuccess} />
+            </Box>
+          </>
+        )}
+        { isFOA && selectedPage === 'users' && 
           <>
             <Typography
             sx={{color: "black"}}

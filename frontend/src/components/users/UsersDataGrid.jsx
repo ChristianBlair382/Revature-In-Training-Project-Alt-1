@@ -139,7 +139,7 @@ export default function UsersDataGrid({onSuccess}) {
     };
 
     const handleDelete = async() => {
-        if (!selectedUser) return;
+        if (!selectedUser || !user?.sub || user.sub === selectedUser.username) return;
 
         setSaving(true);
         setActionError(null);
@@ -161,6 +161,10 @@ export default function UsersDataGrid({onSuccess}) {
         setDialogOpen(true);
     };
 
+    const canDeleteSelectedUser = Boolean(
+        user?.sub && selectedUser && user.sub !== selectedUser.username
+    );
+
     if (loading) return <CircularProgress/>;
 
     if (error) return <Alert severity="error">{error}</Alert>;
@@ -168,7 +172,18 @@ export default function UsersDataGrid({onSuccess}) {
     return (
         <Box>
             <Box>
-                <DataGrid rows={users} columns={columns} getRowId={(row) => row.id}/>
+                <DataGrid
+                    rows={users} 
+                    columns={columns} 
+                    getRowId={(row) => row.id}
+                    initialState={{
+                        pagination: {
+                            paginationModel: {
+                                pageSize: 5,
+                            },
+                        },
+                    }}
+                />
             </Box>
             {isAdmin && (
                 <Button
@@ -236,9 +251,11 @@ export default function UsersDataGrid({onSuccess}) {
                     ) : (
                         <>
                             <Button onClick={() => setManageDialogOpen(false)} disabled={saving}>Cancel</Button>
-                            <Button color="error" onClick={() => setDeleteConfirmation(true)} disabled={saving}>
-                                Delete
-                            </Button>
+                            {canDeleteSelectedUser && (
+                                <Button color="error" onClick={() => setDeleteConfirmation(true)} disabled={saving}>
+                                    Delete
+                                </Button>
+                            )}
                             <Button variant="contained" onClick={handleUpdate} disabled={saving}>
                                 Save Changes
                             </Button>

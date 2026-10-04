@@ -153,7 +153,18 @@ export default function HandDataGrid({onSuccess}) {
     return (
         <Box>
             <Box>
-                <DataGrid rows={hands} columns={columns} getRowId={(row) => row.id}/>
+                <DataGrid 
+                    rows={hands} 
+                    columns={columns} 
+                    getRowId={(row) => row.id}
+                    initialState={{
+                        pagination: {
+                            paginationModel: {
+                                pageSize: 5,
+                            },
+                        },
+                    }}
+                />
             </Box>
             {isAdmin && (
                 <Button

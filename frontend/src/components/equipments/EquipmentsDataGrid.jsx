@@ -93,16 +93,14 @@ export default function EquipmentsDataGrid({onSuccess}) {
             field: 'fuel_alert',
             headerName: 'Fuel Alert',
             width: 120,
-            sortable: false,
-            filterable: false,
-            renderCell: ({row}) => {
-                const lowFuel = row.low_fuel;
-
+            type: 'boolean',
+            valueGetter: (_value, row) => row.low_fuel,
+            renderCell: ({value}) => {
                 return (
                     <Chip
-                        label={lowFuel ? 'Low Fuel' : 'OK'}
-                        color={lowFuel ? 'error' : 'success'}
-                        variant={lowFuel ? 'filled' : 'outlined'}
+                        label={value ? 'Low Fuel' : 'OK'}
+                        color={value ? 'error' : 'success'}
+                        variant={value ? 'filled' : 'outlined'}
                         size="small"
                     />
                 );
@@ -204,7 +202,18 @@ export default function EquipmentsDataGrid({onSuccess}) {
     return (
         <Box>
             <Box>
-                <DataGrid rows={equipments} columns={columns} getRowId={(row) => row.id}/>
+                <DataGrid 
+                    rows={equipments} 
+                    columns={columns} 
+                    getRowId={(row) => row.id}
+                    initialState={{
+                        pagination: {
+                            paginationModel: {
+                                pageSize: 5,
+                            },
+                        },
+                    }}
+                />
             </Box>
             {isAdmin && (
                 <Button

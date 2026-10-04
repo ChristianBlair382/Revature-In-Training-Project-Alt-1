@@ -148,7 +148,18 @@ export default function SupervisorsDataGrid({onSuccess}) {
     return (
         <Box>
             <Box>
-                <DataGrid rows={supervisors} columns={columns} getRowId={(row) => row.id}/>
+                <DataGrid 
+                    rows={supervisors}
+                    columns={columns}
+                    getRowId={(row) => row.id}
+                    initialState={{
+                        pagination: {
+                            paginationModel: {
+                                pageSize: 5,
+                            },
+                        },
+                    }}
+                />
             </Box>
             {isAdmin && (
                 <Button

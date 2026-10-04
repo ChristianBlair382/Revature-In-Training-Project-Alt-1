@@ -101,16 +101,14 @@ export default function FieldJobsDataGrid({onSuccess}) {
             field: 'discrepancy',
             headerName: 'Colocation',
             width: 150,
-            sortable: false,
-            filterable: false,
-            renderCell: ({row}) => {
-                const hasDiscrepancy = discrepancyIds.has(row.id);
-
+            type: 'boolean',
+            valueGetter: (_value, row) => discrepancyIds.has(row.id),
+            renderCell: ({value}) => {
                 return (
                     <Chip
-                        label={hasDiscrepancy ? 'Discrepancy' : 'OK'}
-                        color={hasDiscrepancy ? 'error' : 'success'}
-                        variant={hasDiscrepancy ? 'filled' : 'outlined'}
+                        label={value ? 'Discrepancy' : 'OK'}
+                        color={value ? 'error' : 'success'}
+                        variant={value ? 'filled' : 'outlined'}
                         size="small"
                     />
                 );
@@ -221,7 +219,18 @@ export default function FieldJobsDataGrid({onSuccess}) {
     return (
         <Box>
             <Box>
-                <DataGrid rows={field_jobs} columns={columns} getRowId={(row) => row.id}/>
+                <DataGrid 
+                    rows={field_jobs} 
+                    columns={columns} 
+                    getRowId={(row) => row.id}
+                    initialState={{
+                        pagination: {
+                            paginationModel: {
+                                pageSize: 5,
+                            },
+                        },
+                    }}
+                />
             </Box>
             {isAdmin && (
                 <Button
