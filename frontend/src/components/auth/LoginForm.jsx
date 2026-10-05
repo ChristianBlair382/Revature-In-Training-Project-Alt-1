@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Box, Paper, Alert, Button, Typography, TextField } from "@mui/material";
 import { useAuth } from "../../context/AuthContext.jsx";
+import AgricultureIcon from "@mui/icons-material/Agriculture";
 
 export default function LoginForm() {
     const {login} = useAuth();
@@ -30,12 +31,16 @@ export default function LoginForm() {
                 variant="outlined"
                 sx={{p: 4, width: 320}}
             >
-                <Typography
-                    variant="h6"
-                    gutterBottom
-                >
-                    AgriCore Login
-                </Typography>
+                <Box sx={{display: "flex", alignItems: "center"}}>
+                    <AgricultureIcon color="primary" sx={{fontSize: 80}} />
+                    <Typography
+                        variant="h4"
+                        gutterBottom
+                    >
+                        AgriCore
+                    </Typography>
+                </Box>
+                
                 { error &&
                     <Alert severity="error" sx={{ mb: 2 }}>
                         {error}
