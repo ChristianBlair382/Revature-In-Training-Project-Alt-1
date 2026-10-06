@@ -67,7 +67,7 @@ export default function LoginForm() {
                     fullWidth
                     sx={{ mb: 2 }}
                 >
-                    Log In
+                    Sign In
                 </Button>
             </Paper>
         </Box>

@@ -14,8 +14,10 @@ import {
   ListItemText,
   Drawer
 } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { CssBaseline, ThemeProvider } from "@mui/material";
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
+import createAppTheme from "./theme.js";
 import apiClient from "./api/client.js";
 import AppHeader from "./components/layout/AppHeader.jsx";
 import LoginForm from "./components/auth/LoginForm.jsx";
@@ -36,7 +38,7 @@ import GroupsIcon from '@mui/icons-material/Groups';
 import EngineeringIcon from '@mui/icons-material/Engineering';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 
-function Dashboard() {
+function Dashboard({mode, onToggleColorMode}) {
   const {user, logout} = useAuth()
   const [notification, setNotification] = useState('')
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -265,7 +267,14 @@ function Dashboard() {
 
   return (
     <>
-      <AppHeader username={user?.sub} role={user?.role} onLogout={logout} onDrawerClick={toggleDrawer(true)}/>
+      <AppHeader
+        username={user?.sub}
+        role={user?.role}
+        onLogout={logout}
+        onDrawerClick={toggleDrawer(true)}
+        mode={mode}
+        onToggleColorMode={onToggleColorMode}
+      />
       <Drawer open={drawerOpen} onClose={toggleDrawer(false)}>
         {DrawerList}
       </Drawer>
@@ -273,7 +282,7 @@ function Dashboard() {
         <Box sx={{display: 'grid', gridTemplateColumns: {xs: '1fr', md: 'repeat(3, minmax(0, 1fr))'}, gap: 2, px: 3, py: 2, padding: 4}}>
           <Card variant="outlined">
             <CardContent>
-              <Typography variant="h6" component="h2" sx={{color: 'black'}}>
+              <Typography variant="h6" component="h2">
                 Completed Field Jobs by Equipment Model
               </Typography>
               {completionSummaryLoading ? (
@@ -298,7 +307,7 @@ function Dashboard() {
           </Card>
           <Card variant="outlined">
             <CardContent>
-              <Typography variant="h6" component="h2" sx={{color: 'black'}}>
+              <Typography variant="h6" component="h2">
                 Farms with 30%+ Equipment in Maintenance
               </Typography>
               {maintenanceFarmSummaryLoading ? (
@@ -323,7 +332,7 @@ function Dashboard() {
           </Card>
           <Card variant="outlined">
             <CardContent>
-              <Typography variant="h6" component="h2" sx={{color: 'black'}}>
+              <Typography variant="h6" component="h2">
                 Hands with In-Progress Field Jobs by Supervisor
               </Typography>
               {supervisorHandSummaryLoading ? (
@@ -352,7 +361,6 @@ function Dashboard() {
         { selectedPage === 'farms' && (
           <>
             <Typography
-              sx={{color: "black"}}
               variant="h5"
               component="h2"
               gutterBottom
@@ -367,7 +375,6 @@ function Dashboard() {
         { selectedPage === 'equipments' && (
           <>
             <Typography
-            sx={{color: "black"}}
             variant="h5"
             component="h2"
             gutterBottom
@@ -382,7 +389,6 @@ function Dashboard() {
         { selectedPage === 'field_jobs' && (
           <>
             <Typography
-              sx={{color: "black"}}
               variant="h5"
               component="h2"
               gutterBottom
@@ -397,7 +403,6 @@ function Dashboard() {
         { selectedPage === 'service_reports' && (
           <>
             <Typography
-              sx={{color: "black"}}
               variant="h5"
               component="h2"
               gutterBottom
@@ -412,7 +417,6 @@ function Dashboard() {
         { selectedPage === 'hands' && (
           <>
             <Typography
-              sx={{color: "black"}}
               variant="h5"
               component="h2"
               gutterBottom
@@ -427,7 +431,6 @@ function Dashboard() {
         { selectedPage === 'supervisors' && (
           <>
             <Typography
-              sx={{color: "black"}}
               variant="h5"
               component="h2"
               gutterBottom
@@ -442,7 +445,6 @@ function Dashboard() {
         { isFOA && selectedPage === 'users' && 
           <>
             <Typography
-            sx={{color: "black"}}
             variant="h5"
             component="h2"
             gutterBottom
@@ -467,16 +469,40 @@ function Dashboard() {
   );
 }
 
-function AppContent() {
+function AppContent({mode, onToggleColorMode}) {
   const {isAuthenticated} = useAuth();
-  return isAuthenticated ? <Dashboard /> : <LoginForm />;
+  return isAuthenticated
+    ? <Dashboard mode={mode} onToggleColorMode={onToggleColorMode} />
+    : (
+      <>
+        <AppHeader mode={mode} onToggleColorMode={onToggleColorMode} />
+        <LoginForm />
+      </>
+    );
 }
 
 function App() {
+  const [mode, setMode] = useState(() => (
+    localStorage.getItem('agricoreColorMode') === 'dark' ? 'dark' : 'light'
+  ));
+  const theme = useMemo(() => createAppTheme(mode), [mode]);
+
+  useEffect(() => {
+    localStorage.setItem('agricoreColorMode', mode);
+    document.documentElement.dataset.colorMode = mode;
+  }, [mode]);
+
+  const toggleColorMode = () => {
+    setMode((currentMode) => currentMode === 'light' ? 'dark' : 'light');
+  };
+
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <AuthProvider>
+        <AppContent mode={mode} onToggleColorMode={toggleColorMode} />
+      </AuthProvider>
+    </ThemeProvider>
   )
 }
 

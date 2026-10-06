@@ -10,7 +10,8 @@ import {
     DialogContent,
     DialogTitle,
     Stack,
-    TextField
+    TextField,
+    MenuItem
 } from "@mui/material";
 import apiClient from "../../api/client.js";
 import { useAuth } from "../../context/AuthContext.jsx";
@@ -24,6 +25,7 @@ export default function HandDataGrid({onSuccess}) {
     const {user} = useAuth();
     const isAdmin = user?.role === 'Field_Operations_Admin' || user?.role === 'FOA';
     const [hands, setHands] = useState([]);
+    const [farms, setFarms] = useState([]);
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -37,11 +39,15 @@ export default function HandDataGrid({onSuccess}) {
     async function fetchHands() {
         setLoading(true);
         try {
-            const response = await apiClient.get('/hands');
-            setHands(response.data);
+            const [handResponse, farmResponse] = await Promise.all([
+                apiClient.get('/hands'),
+                apiClient.get('/farms'),
+            ]);
+            setHands(handResponse.data);
+            setFarms(farmResponse.data);
             setError(null);
         } catch {
-            setError('Error: Could not load hand data.');
+            setError('Error: Could not load hand anf farm data.');
         } finally {
             setLoading(false);
         }
@@ -66,10 +72,19 @@ export default function HandDataGrid({onSuccess}) {
         setManageDialogOpen(true);
     }, []);
 
+    const farmsById = useMemo(() => new Map(
+        farms.map((farm) => [farm.id, farm.name])
+    ), [farms]);
+
     const columns = useMemo(() => [
         {field: 'id', headerName: "ID", width: 70},
         {field: 'name', headerName: "Hand Name", width: 140},
-        {field: 'farm_id', headerName: "Farm ID", width: 70, type: "number"},
+        {
+            field: 'farm_id',
+            headerName: "Farm",
+            width: 160,
+            valueGetter: (_value, row) => farmsById.get(row.farm_id) ?? `Unknown farm (${row.farm_id})`,
+        },
         ...(isAdmin ? [{
             field: 'actions',
             headerName: 'Actions',
@@ -82,7 +97,7 @@ export default function HandDataGrid({onSuccess}) {
                 </Button>
             ),
         }] : []),
-    ], [isAdmin, openManageDialog]);
+    ], [isAdmin, farmsById, openManageDialog]);
 
     const handleCreate = async() => {
         setActionError(null);
@@ -176,24 +191,41 @@ export default function HandDataGrid({onSuccess}) {
                 </Button>
             )}
             <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
-                <DialogTitle sx={{color: "black"}}>Create New Hand</DialogTitle>
+                <DialogTitle>Create New Hand</DialogTitle>
                 <DialogContent>
                     <Stack spacing={2} sx={{mt: 1, minWidth: 300}}>
                         {actionError && <Alert severity="error">{actionError}</Alert>}
                         <TextField label="Name" value={form_values.name} onChange={handleFieldChange('name')}/>
-                        <TextField label="Farm ID" type="number" value={form_values.farm_id} onChange={handleFieldChange('farm_id')}/>
+                        <TextField
+                            select
+                            label="Farm"
+                            value={form_values.farm_id}
+                            onChange={handleFieldChange('farm_id')}
+                        >
+                            {farms.length > 0 ? farms.map((farm) => (
+                                <MenuItem key={farm.id} value={farm.id}>{farm.name}</MenuItem>
+                            )) : (
+                                <MenuItem value="" disabled>No farms available</MenuItem>
+                            )}
+                        </TextField>
                     </Stack>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
-                    <Button variant="contained" onClick={handleCreate}>Create</Button>
+                    <Button 
+                        variant="contained" 
+                        onClick={handleCreate}
+                        disabled={!form_values.farm_id || farms.length === 0}
+                    >
+                        Create
+                    </Button>
                 </DialogActions>
             </Dialog>
             <Dialog
                 open={manageDialogOpen}
                 onClose={() => !saving && setManageDialogOpen(false)}
             >
-                <DialogTitle sx={{color: "black"}}>
+                <DialogTitle>
                     {deleteConfirmation ? 'Delete Hand?' : `Manage Hand ${selectedHand?.id ?? ''}`}
                 </DialogTitle>
                 <DialogContent>
@@ -206,7 +238,18 @@ export default function HandDataGrid({onSuccess}) {
                         ) : (
                             <>
                                 <TextField label="Name" value={form_values.name} onChange={handleFieldChange('name')}/>
-                                <TextField label="Farm ID" type="number" value={form_values.farm_id} onChange={handleFieldChange('farm_id')}/>
+                                <TextField
+                                    select
+                                    label="Farm"
+                                    value={form_values.farm_id}
+                                    onChange={handleFieldChange('farm_id')}
+                                >
+                                    {farms.length > 0 ? farms.map((farm) => (
+                                        <MenuItem key={farm.id} value={farm.id}>{farm.name}</MenuItem>
+                                    )) : (
+                                        <MenuItem value="" disabled>No farms available</MenuItem>
+                                    )}
+                                </TextField>
                             </>
                         )}
                     </Stack>

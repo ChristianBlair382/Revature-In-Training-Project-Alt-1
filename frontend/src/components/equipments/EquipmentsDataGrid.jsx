@@ -33,6 +33,7 @@ export default function EquipmentsDataGrid({onSuccess}) {
     const isFieldHand = user?.role === 'Field_Hand' || user?.role === 'FH';
     const canManage = isAdmin || isFieldHand;
     const [equipments, setEquipments] = useState([]);
+    const [farms, setFarms] = useState([]);
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -46,11 +47,15 @@ export default function EquipmentsDataGrid({onSuccess}) {
     async function fetchEquipments() {
         setLoading(true);
         try {
-            const response = await apiClient.get('/equipments');
-            setEquipments(response.data);
+            const [equipmentResponse, farmResponse] = await Promise.all([
+                apiClient.get('/equipments'),
+                apiClient.get('/farms'),
+            ]);
+            setEquipments(equipmentResponse.data);
+            setFarms(farmResponse.data);
             setError(null);
         } catch {
-            setError('Error: Could not load equipment data.');
+            setError('Error: Could not load equipment and farm data.');
         } finally {
             setLoading(false);
         }
@@ -77,6 +82,10 @@ export default function EquipmentsDataGrid({onSuccess}) {
         setActionError(null);
         setManageDialogOpen(true);
     }, []);
+
+    const farmsById = useMemo(() => new Map(
+        farms.map((farm) => [farm.id, farm.name])
+    ), [farms]);
 
     const columns = useMemo(() => [
         {field: 'id', headerName: "ID", width: 70},
@@ -107,7 +116,12 @@ export default function EquipmentsDataGrid({onSuccess}) {
             },
         },
         {field: 'status', headerName: "Status", width: 70},
-        {field: 'farm_id', headerName: "Farm ID", width: 70, type: "number"},
+        {
+            field: 'farm_id',
+            headerName: "Farm",
+            width: 160,
+            valueGetter: (_value, row) => farmsById.get(row.farm_id) ?? `Unknown farm (${row.farm_id})`,
+        },
         ...(canManage ? [{
             field: 'actions',
             headerName: 'Actions',
@@ -120,7 +134,7 @@ export default function EquipmentsDataGrid({onSuccess}) {
                 </Button>
             ),
         }] : []),
-    ], [canManage, openManageDialog]);
+    ], [canManage, farmsById, openManageDialog]);
 
     const handleCreate = async() => {
         setActionError(null);
@@ -225,7 +239,7 @@ export default function EquipmentsDataGrid({onSuccess}) {
                 </Button>
             )}
             <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
-                <DialogTitle sx={{color: "black"}}>Create New Equipment</DialogTitle>
+                <DialogTitle>Create New Equipment</DialogTitle>
                 <DialogContent>
                     <Stack spacing={2} sx={{mt: 1, minWidth: 300}}>
                         {actionError && <Alert severity="error">{actionError}</Alert>}
@@ -237,19 +251,36 @@ export default function EquipmentsDataGrid({onSuccess}) {
                                 <MenuItem key={option} value={option}>{option}</MenuItem>
                             ))}
                         </TextField>
-                        <TextField label="Farm ID" type="number" value={form_values.farm_id} onChange={handleFieldChange('farm_id')}/>
+                        <TextField
+                            select
+                            label="Farm"
+                            value={form_values.farm_id}
+                            onChange={handleFieldChange('farm_id')}
+                        >
+                            {farms.length > 0 ? farms.map((farm) => (
+                                <MenuItem key={farm.id} value={farm.id}>{farm.name}</MenuItem>
+                            )) : (
+                                <MenuItem value="" disabled>No farms available</MenuItem>
+                            )}
+                        </TextField>
                     </Stack>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
-                    <Button variant="contained" onClick={handleCreate}>Create</Button>
+                    <Button
+                        variant="contained"
+                        onClick={handleCreate}
+                        disabled={!form_values.farm_id || farms.length === 0}
+                    >
+                        Create
+                    </Button>
                 </DialogActions>
             </Dialog>
             <Dialog
                 open={manageDialogOpen}
                 onClose={() => !saving && setManageDialogOpen(false)}
             >
-                <DialogTitle sx={{color: "black"}}>
+                <DialogTitle>
                     {deleteConfirmation ? 'Delete Equipment?' : `${isFieldHand ? 'Update' : 'Manage'} Equipment ${selectedEquipment?.id ?? ''}`}
                 </DialogTitle>
                 <DialogContent>
@@ -277,7 +308,18 @@ export default function EquipmentsDataGrid({onSuccess}) {
                                                 <MenuItem key={option} value={option}>{option}</MenuItem>
                                             ))}
                                         </TextField>
-                                        <TextField label="Farm ID" type="number" value={form_values.farm_id} onChange={handleFieldChange('farm_id')}/>
+                                        <TextField
+                                            select
+                                            label="Farm"
+                                            value={form_values.farm_id}
+                                            onChange={handleFieldChange('farm_id')}
+                                        >
+                                            {farms.length > 0 ? farms.map((farm) => (
+                                                <MenuItem key={farm.id} value={farm.id}>{farm.name}</MenuItem>
+                                            )) : (
+                                                <MenuItem value="" disabled>No farms available</MenuItem>
+                                            )}
+                                        </TextField>
                                     </>
                                 )}
                             </>

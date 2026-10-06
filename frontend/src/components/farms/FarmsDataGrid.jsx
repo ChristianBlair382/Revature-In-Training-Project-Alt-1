@@ -184,7 +184,7 @@ export default function FarmsDataGrid({onSuccess}) {
                 </Button>
             )}
             <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
-                <DialogTitle sx={{color: "black"}}>Create New Farm</DialogTitle>
+                <DialogTitle>Create New Farm</DialogTitle>
                 <DialogContent>
                     <Stack spacing={2} sx={{mt: 1, minWidth: 300}}>
                         {actionError && <Alert severity="error">{actionError}</Alert>}
@@ -203,7 +203,7 @@ export default function FarmsDataGrid({onSuccess}) {
                 open={manageDialogOpen}
                 onClose={() => !saving && setManageDialogOpen(false)}
             >
-                <DialogTitle sx={{color: "black"}}>
+                <DialogTitle>
                     {deleteConfirmation ? 'Delete Farm?' : `Manage Farm ${selectedFarm?.id ?? ''}`}
                 </DialogTitle>
                 <DialogContent>
