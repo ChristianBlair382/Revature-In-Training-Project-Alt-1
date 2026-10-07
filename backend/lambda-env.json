@@ -1,0 +1,7 @@
+{
+    "Variables" : {
+        "DATABASE_URL" : "postgresql+asyncpg://postgres:Lact0seFr33@agricore-2478.ctagwcmes3hh.us-east-2.rds.amazonaws.com/agricore_2478",
+        "SECRET_KEY" : "821ca7d43badd3ee3b6f3a3d6eb49bad2c297560bcf8713bc91eff5829533ed8",
+        "FRONTEND_ORIGIN" : "https://d18hhbrwk09w97.cloudfront.net"
+    }
+}
