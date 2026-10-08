@@ -2,6 +2,7 @@ import {
   Container,
   Typography,
   Box,
+  Button,
   Snackbar,
   Alert,
   Card,
@@ -15,7 +16,7 @@ import {
   Drawer
 } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
-import { CssBaseline, ThemeProvider } from "@mui/material";
+import { CssBaseline, ThemeProvider, useMediaQuery } from "@mui/material";
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 import createAppTheme from "./theme.js";
 import apiClient from "./api/client.js";
@@ -65,7 +66,7 @@ function Dashboard({mode, onToggleColorMode}) {
 
   // DRAWER CONSTRUCT
   const DrawerList = (
-    <Box sx={{ width: 300 }} role="presentation" onClick={toggleDrawer(false)}>
+    <Box sx={{ width: 300, height: "100%", display: "flex", flexDirection: "column", }} role="presentation" onClick={toggleDrawer(false)}>
       <List>
         <ListItem>
           <ListItemButton color="inherit" onClick={displaySelectedPage('summaries')}>
@@ -136,6 +137,18 @@ function Dashboard({mode, onToggleColorMode}) {
           </>
         )}
       </List>
+      <Box 
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'flex-center',
+          mt: 'auto'
+        }}
+      >
+        <Typography sx={{ mr: 2 }}>{user?.sub} </Typography>
+        <Typography sx={{ fontSize: 10 }}>{user?.role}</Typography>
+        <Button color="inherit" onClick={logout}>Log Out</Button>
+      </Box>
     </Box>
   );
 
@@ -268,9 +281,6 @@ function Dashboard({mode, onToggleColorMode}) {
   return (
     <>
       <AppHeader
-        username={user?.sub}
-        role={user?.role}
-        onLogout={logout}
         onDrawerClick={toggleDrawer(true)}
         mode={mode}
         onToggleColorMode={onToggleColorMode}
@@ -482,19 +492,43 @@ function AppContent({mode, onToggleColorMode}) {
 }
 
 function App() {
-  const [mode, setMode] = useState(() => (
-    localStorage.getItem('agricoreColorMode') === 'dark' ? 'dark' : 'light'
-  ));
+  const [colorModePreference, setColorModePreference] = useState(() => {
+    try {
+      const savedPreference = localStorage.getItem("agricoreColorMode");
+      return savedPreference === "light" || savedPreference === "dark" ? savedPreference : "system";
+    } catch (error) {
+      console.warn("Could not read the saved color preference; Defaulting to system theme settings...", error);
+      return "system";
+    }
+  });
+  const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
+  const mode = colorModePreference === "system" ? (prefersDarkMode ? "dark" : "light") : colorModePreference;
   const theme = useMemo(() => createAppTheme(mode), [mode]);
 
   useEffect(() => {
-    localStorage.setItem('agricoreColorMode', mode);
+    try {
+      window.localStorage.setItem('agricoreColorMode', colorModePreference)
+    } catch (error) {
+      console.warn("Could not save current color preference; will not remain persistent after this session. Sorry!", error);
+    }
     document.documentElement.dataset.colorMode = mode;
   }, [mode]);
 
   const toggleColorMode = () => {
-    setMode((currentMode) => currentMode === 'light' ? 'dark' : 'light');
+    setColorModePreference(mode === "dark" ? "light" : "dark");
   };
+
+  useEffect(() => {
+    function handleKeyShortcut(e){
+      const isCtrlOrCmd = e.ctrlKey || e.metaKey
+      if (isCtrlOrCmd && e.key === "."){
+        e.preventDefault();
+        toggleColorMode();
+      }
+    }
+    window.addEventListener("keydown", handleKeyShortcut);
+    return () => window.removeEventListener("keydown", handleKeyShortcut);
+  }, [toggleColorMode]);
 
   return (
     <ThemeProvider theme={theme}>

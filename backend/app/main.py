@@ -1,12 +1,24 @@
 from app.config import settings
-from fastapi import FastAPI, Request
+from botocore.exceptions import BotoCoreError, ClientError
+from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.concurrency import run_in_threadpool
+
+from app.dependencies import get_db, require_role
+from app.orm_models import User, USER_ROLE
 
 from .routers import auth, equipments, farms, field_jobs, hands, service_reports, supervisors, users
 
+import boto3
+
 FRONTEND_ORIGIN = settings.frontend_origin
+s3 = boto3.client('s3')
+bucket_1 = 'agricore-service-reports-cb2478'
+bucket_2 = 'agricore-frontend-cb2478'
 
 app = FastAPI(
     title="AgriCore",
@@ -25,6 +37,79 @@ app.add_middleware(
 @app.get("/health", tags=["health"])
 async def health_check() -> dict[str, str]:
     return {"status": "OK"}
+
+@app.get("/health/ready", tags=["health"])
+async def health_readiness_check(
+    db: AsyncSession = Depends(get_db)
+) -> JSONResponse:
+    db_command = select(1)
+    output = await db.execute(db_command)
+    if not output:
+        return JSONResponse(
+            status_code=503,
+            content={"status-503": "Database is currently unreachable."}
+        )
+    return JSONResponse(
+        status_code=200,
+        content={"status-200": "Database is currently reachable."}
+    )
+
+@app.get("/health/detail", tags=["health"])
+async def health_readiness_check(
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(require_role(USER_ROLE.FOA))
+) -> JSONResponse:
+    checks = {
+        "database": {
+            "status": "unreachable",
+            "status code": 503,
+        },
+        "s3_service_reports": {
+            "status": "unreachable",
+            "status code": 503,
+        },
+        "s3_frontend": {
+            "status": "unreachable",
+            "status code": 503,
+        }
+    }
+
+    try:
+        await db.execute(select(1))
+        checks["database"]["status"] = "reachable"
+        checks["database"]["status code"] = 200
+    except SQLAlchemyError as e:
+        checks["database"]["status code"] = 503
+
+    try:
+        s3_output = await run_in_threadpool(s3.head_bucket, Bucket=bucket_1)
+        checks["s3_service_reports"]["status"] = "reachable"
+        checks["s3_service_reports"]["status code"] = s3_output["ResponseMetadata"]["HTTPStatusCode"]
+    except ClientError as e:
+        checks["s3_service_reports"]["status code"] = e.response["ResponseMetadata"].get(
+            "HTTPStatusCode", 503
+        )
+    except BotoCoreError:
+        checks["s3_service_reports"]["status code"] = 503
+    status_code = (200 if all(check["status"] == "reachable" for check in checks.values()) else 503)
+
+    try:
+        s3_output = await run_in_threadpool(s3.head_bucket, Bucket=bucket_2)
+        checks["s3_frontend"]["status"] = "reachable"
+        checks["s3_frontend"]["status code"] = s3_output["ResponseMetadata"]["HTTPStatusCode"]
+    except ClientError as e:
+        checks["s3_frontend"]["status code"] = e.response["ResponseMetadata"].get(
+            "HTTPStatusCode", 503
+        )
+    except BotoCoreError:
+        checks["s3_frontend"]["status code"] = 503
+    status_code = (200 if all(check["status"] == "reachable" for check in checks.values()) else 503)
+    
+    response = JSONResponse(
+        status_code=status_code,
+        content=checks
+    )
+    return response
 
 @app.get("/version", tags=["version"])
 async def version_check() -> dict[str, str]:

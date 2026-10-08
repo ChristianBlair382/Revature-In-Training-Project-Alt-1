@@ -32,7 +32,7 @@ export default function LoginForm() {
                 sx={{p: 4, width: 320}}
             >
                 <Box sx={{display: "flex", alignItems: "center"}}>
-                    <AgricultureIcon color="primary" sx={{fontSize: 80}} />
+                    <AgricultureIcon color="item" sx={{fontSize: 80}} />
                     <Typography
                         variant="h4"
                         gutterBottom

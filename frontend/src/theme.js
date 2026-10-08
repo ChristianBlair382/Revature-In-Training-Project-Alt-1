@@ -2,25 +2,25 @@ import { createTheme } from "@mui/material/styles";
 
 const createAppTheme = (mode) => createTheme({
     palette: {
+        item: {
+            main: '#f0f298',
+        },
         mode,
-        primary: {
-            main: '#93d664'
-        },
-        secondary: {
-            main: '#f0f298'
-        },
         ...(mode === 'dark' && {
             background: {
+                primary: '#93d664',
                 default: '#171c22',
                 paper: '#222a32',
             },
             text: {
                 primary: '#f4f7fa',
-                secondary: '#c3ccd5',
+                secondary: '#878c91',
             },
         }),
         ...(mode === 'light' && {
             background: {
+                primary: '#93d664',
+                secondary: '#f0f298',
                 default: '#f7f8fa',
                 paper: '#ffffff',
             },
