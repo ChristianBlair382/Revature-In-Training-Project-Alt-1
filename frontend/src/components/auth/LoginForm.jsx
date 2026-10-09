@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, Paper, Alert, Button, Typography, TextField } from "@mui/material";
+import { Box, Paper, Alert, Button, Typography, TextField, CircularProgress } from "@mui/material";
 import { useAuth } from "../../context/AuthContext.jsx";
 import AgricultureIcon from "@mui/icons-material/Agriculture";
 
@@ -8,10 +8,12 @@ export default function LoginForm() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (event) => {
         event.preventDefault()
         setError(null);
+        setLoading(true);
         try {
             await login(username, password);
         } catch (err) {
@@ -20,6 +22,8 @@ export default function LoginForm() {
             } else {
                 setError('Something went wrong! Please try again later.');
             }
+        } finally {
+            setLoading(false);
         }
     }
 
@@ -65,9 +69,10 @@ export default function LoginForm() {
                     type="submit"
                     variant="contained"
                     fullWidth
-                    sx={{ mb: 2 }}
+                    disabled={loading}
+                    sx={{ mb: 2, bgcolor: 'background.primary'}}
                 >
-                    Sign In
+                    {loading ? <CircularProgress size={24} color="inherit" /> : "Sign In"}
                 </Button>
             </Paper>
         </Box>

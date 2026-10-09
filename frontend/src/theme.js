@@ -8,7 +8,8 @@ const createAppTheme = (mode) => createTheme({
         mode,
         ...(mode === 'dark' && {
             background: {
-                primary: '#93d664',
+                primary: '#4a6c32',
+                secondary: '#7b7c20',
                 default: '#171c22',
                 paper: '#222a32',
             },

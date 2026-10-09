@@ -20,7 +20,7 @@ export default function AppHeader({onDrawerClick, mode, onToggleColorMode}) {
                             aria-label="Open navigation drawer"
                             onClick={onDrawerClick}
                         >
-                            <MenuIcon color='item' sx={{mr: 2}} />
+                            <MenuIcon sx={{mr: 2}} />
                         </IconButton>
                     )}
                     <Typography variant="h6" component="h2">

@@ -1,3 +1,4 @@
+boto3
 fastapi
 sqlalchemy[asyncio]
 asyncpg

@@ -36,21 +36,6 @@ async def list_field_jobs(
 
     return list(output.scalars().all())
 
-@router.get("/{field_job_id}", response_model=Field_Job_Read)
-async def find_field_job_by_id(
-    field_job_id: int,
-    db: AsyncSession = Depends(get_db),
-    _: User = Depends(get_current_user)
-):
-    target_field_job = await db.get(Field_Job, field_job_id)
-
-    if (not target_field_job):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Field Job '{field_job_id}' does not exist."
-        )
-    return target_field_job
-
 @router.get("/discrepencies", response_model=list[Field_Job_Discrepency_Read])
 async def isolate_colocation_discrepencies(
     priority: FIELD_JOB_PRIORITY | None = None,
@@ -77,6 +62,21 @@ async def isolate_colocation_discrepencies(
 
     output = await db.execute(db_command)
     return list(output.mappings().all())
+
+@router.get("/{field_job_id}", response_model=Field_Job_Read)
+async def find_field_job_by_id(
+    field_job_id: int,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(get_current_user)
+):
+    target_field_job = await db.get(Field_Job, field_job_id)
+
+    if (not target_field_job):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Field Job '{field_job_id}' does not exist."
+        )
+    return target_field_job
 
 # PATCH Routers
 

@@ -1,5 +1,5 @@
-import { createContext, useContext, useMemo, useState } from "react";
-import { apiClient } from "../api/client.js";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { apiClient, AUTH_CHANGED_EVENT } from "../api/client.js";
 
 const AuthContext = createContext(null);
 
@@ -10,6 +10,12 @@ function decodeToken(token) {
 
 export function AuthProvider({children}) {
     const [token, setToken] = useState(() => localStorage.getItem('agricoreToken'));
+
+    useEffect(() => {
+        const syncToken = () => setToken(localStorage.getItem('agricoreToken'));
+        window.addEventListener(AUTH_CHANGED_EVENT, syncToken);
+        return () => window.removeEventListener(AUTH_CHANGED_EVENT, syncToken);
+    }, []);
 
     const user = useMemo(() => (token ? decodeToken(token): null), [token]);
 
@@ -22,11 +28,13 @@ export function AuthProvider({children}) {
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         });
         localStorage.setItem('agricoreToken', response.data.access_token);
+        localStorage.setItem('agricoreRefreshToken', response.data.refresh_token);
         setToken(response.data.access_token);
     }
 
     const logout = () => {
         localStorage.removeItem('agricoreToken');
+        localStorage.removeItem('agricoreRefreshToken');
         setToken(null);
     }
 

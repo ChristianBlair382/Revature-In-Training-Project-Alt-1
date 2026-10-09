@@ -34,7 +34,8 @@ export default function FieldJobsDataGrid({onSuccess}) {
     const isFieldHand = user?.role === 'Field_Hand' || user?.role === 'FH';
     const canManage = isAdmin || isFieldHand;
     const [field_jobs, setFieldJobs] = useState([]);
-    const [discrepancyIds, setDiscrepancyIds] = useState(new Set());
+    const [discrepancyIds, setDiscrepancyIds] = useState(null);
+    const [discrepancyError, setDiscrepancyError] = useState(false);
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -62,8 +63,9 @@ export default function FieldJobsDataGrid({onSuccess}) {
         try {
             const response = await apiClient.get('/field_jobs/discrepencies');
             setDiscrepancyIds(new Set(response.data.map((item) => item.field_job_id)));
+            setDiscrepancyError(false);
         } catch {
-            setDiscrepancyIds(new Set());
+            setDiscrepancyError(true);
         }
     }
 
@@ -102,8 +104,12 @@ export default function FieldJobsDataGrid({onSuccess}) {
             headerName: 'Colocation',
             width: 150,
             type: 'boolean',
-            valueGetter: (_value, row) => discrepancyIds.has(row.id),
+            valueGetter: (_value, row) => discrepancyIds?.has(row.id) ?? false,
             renderCell: ({value}) => {
+                if (discrepancyError || !discrepancyIds) {
+                    return <Chip label="Unavailable" variant="outlined" size="small"/>;
+                }
+
                 return (
                     <Chip
                         label={value ? 'Discrepancy' : 'OK'}
@@ -126,7 +132,7 @@ export default function FieldJobsDataGrid({onSuccess}) {
                 </Button>
             ),
         }] : []),
-    ], [canManage, discrepancyIds, openManageDialog]);
+    ], [canManage, discrepancyError, discrepancyIds, openManageDialog]);
 
     const handleCreate = async() => {
         setActionError(null);
@@ -140,7 +146,7 @@ export default function FieldJobsDataGrid({onSuccess}) {
             setDialogOpen(false);
             setFormValues({...EMPTY_FORM_VALUES});
             onSuccess(`Field Job "${form_values.title}" created successfully.`);
-            await fetchFieldJobs();
+            await Promise.all([fetchFieldJobs(), fetchDiscrepancies()]);
         } catch {
             setActionError('Could not create field job. Check the values and try again.');
         }
@@ -177,6 +183,7 @@ export default function FieldJobsDataGrid({onSuccess}) {
                 updatedRow = response.data;
             }
 
+            await fetchDiscrepancies();
             setFieldJobs((currentFieldJobs) => currentFieldJobs.map((fieldJob) => (
                 fieldJob.id === selectedFieldJob.id ? updatedRow : fieldJob
             )));
@@ -218,6 +225,11 @@ export default function FieldJobsDataGrid({onSuccess}) {
 
     return (
         <Box>
+            {discrepancyError && (
+                <Alert severity="warning" sx={{mb: 2}}>
+                    Colocation status could not be loaded.
+                </Alert>
+            )}
             <Box>
                 <DataGrid 
                     rows={field_jobs} 

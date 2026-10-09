@@ -2,7 +2,9 @@
 # From: backend/ with venv active
 
 import asyncio
+import sys
 from decimal import Decimal
+from sqlalchemy.exc import IntegrityError
 
 from app.database import AsyncSessionLocal
 from app.orm_models import (
@@ -28,22 +30,34 @@ async def seed_tables() -> None:
             User(username="auditor", hashed_password=encrypt_password("Auditor123!"), role=USER_ROLE.AUD),
         ])
 
-        supervisor = Supervisor(name="Jordan Reyes")
-        session.add(supervisor)
+        supervisors = [
+            Supervisor(name="Jordan Reyes"),
+            Supervisor(name="Hamilton Powers"),
+        ]
+        session.add_all(supervisors)
         await session.flush()
 
-        farm = Farm(
-            name="Green Valley Farm",
-            location_region="Central Valley",
-            capacity=1200,
-            supervisor_id=supervisor.id,
-        )
-        session.add(farm)
+        farms = [
+            Farm(
+                name="Green Valley Farm",
+                location_region="Central Valley",
+                capacity=1200,
+                supervisor_id=supervisors[0].id,
+            ),
+            Farm(
+                name="Rolling Hills Farm",
+                location_region="Central Valley",
+                capacity=1050,
+                supervisor_id=supervisors[1].id,
+            ),
+        ]
+        session.add_all(farms)
         await session.flush()
 
         hands = [
-            Hand(name="Casey Morgan", farm_id=farm.id),
-            Hand(name="Riley Chen", farm_id=farm.id),
+            Hand(name="Casey Morgan", farm_id=farms[0].id),
+            Hand(name="Adele Peterson", farm_id=farms[0].id),
+            Hand(name="Riley Chen", farm_id=farms[1].id),
         ]
         equipment = [
             Equipment(
@@ -51,14 +65,21 @@ async def seed_tables() -> None:
                 model="John Deere 5075E",
                 status=EQUIPMENT_STATUS.IN_USE,
                 fuel_lvl=Decimal("76.50"),
-                farm_id=farm.id,
+                farm_id=farms[0].id,
             ),
             Equipment(
                 serial_num="GV-HARVESTER-001",
                 model="Case IH 8250",
                 status=EQUIPMENT_STATUS.IDLE,
                 fuel_lvl=Decimal("42.00"),
-                farm_id=farm.id,
+                farm_id=farms[1].id,
+            ),
+            Equipment(
+                serial_num="GV-AGRIGATOR-001",
+                model="Xevious 3950",
+                status=EQUIPMENT_STATUS.IDLE,
+                fuel_lvl=Decimal("13.00"),
+                farm_id=farms[1].id,
             ),
         ]
         session.add_all([*hands, *equipment])
@@ -70,7 +91,7 @@ async def seed_tables() -> None:
                 priority=FIELD_JOB_PRIORITY.CRITICAL,
                 status=FIELD_JOB_STATUS.IN_PROGRESS,
                 equipment_id=equipment[0].id,
-                hand_id=hands[0].id,
+                hand_id=hands[2].id,
             ),
             Field_Job(
                 title="Inspect harvesting equipment",
@@ -98,4 +119,12 @@ async def seed_tables() -> None:
         await session.commit()
 
 if __name__ == "__main__":
-    asyncio.run(seed_tables())
+    try:
+        asyncio.run(seed_tables())
+    except IntegrityError:
+        print(
+            "Seeding failed: the database rejected a constant, possibly because "
+            "seed data already exists or conflicts with existing records.",
+            file=sys.stderr,
+        )
+        raise SystemExit(1) from None

@@ -147,7 +147,7 @@ function Dashboard({mode, onToggleColorMode}) {
       >
         <Typography sx={{ mr: 2 }}>{user?.sub} </Typography>
         <Typography sx={{ fontSize: 10 }}>{user?.role}</Typography>
-        <Button color="inherit" onClick={logout}>Log Out</Button>
+        <Button sx={{bgcolor: 'background.secondary'}} color="inherit" onClick={logout}>Log Out</Button>
       </Box>
     </Box>
   );

@@ -4,7 +4,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies import get_db, get_current_user, require_role
 from app.orm_models import User, USER_ROLE
-from app.schemas import User_Create, User_Read, User_Update
+from app.routers.auth import register_new_user
+from app.schemas import User_Read, User_Update
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -62,17 +63,13 @@ async def update_user(
 
 # POST Routers
 
-@router.post("", response_model=User_Read, status_code=status.HTTP_201_CREATED)
-async def create_new_user(
-    payload: User_Create,
-    db: AsyncSession = Depends(get_db),
-    _: User = Depends(require_role(USER_ROLE.FOA))
-):
-    new_user = User(**payload.model_dump())
-    db.add(new_user)
-    await db.commit()
-    await db.refresh(new_user)
-    return new_user
+router.add_api_route(
+    "",
+    register_new_user,
+    methods=["POST"],
+    response_model=User_Read,
+    status_code=status.HTTP_201_CREATED,
+)
 
 # DELETE Routers
 
