@@ -5,7 +5,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.dependencies import get_db, require_role
+from app.dependencies import get_db, require_role, require_permission
 from app.orm_models import User, USER_ROLE, Refresh_Token
 from app.schemas import User_Create, User_Read, Token, Refresh_Token_Request
 from app.security import create_access_token, encrypt_password, verify_password, create_refresh_token, hash_refresh_token
@@ -48,7 +48,7 @@ async def login(
 async def register_new_user(
     payload: User_Create,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(require_role(USER_ROLE.FOA))
+    _: User = Depends(require_permission("users:create"))
 ) -> User:
     # Check that there isn't a User in the database with the same username as the attempted payload.
     db_command = select(User).where(func.lower(User.username) == payload.username.lower())

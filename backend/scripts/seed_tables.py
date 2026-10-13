@@ -5,6 +5,8 @@ import asyncio
 import sys
 from decimal import Decimal
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import AsyncSessionLocal
 from app.orm_models import (
@@ -19,11 +21,100 @@ from app.orm_models import (
     Service_Report,
     Supervisor,
     User,
+    Permission,
+    RolePermission,
 )
 from app.security import encrypt_password
 
+PERMISSION_RESOURCES = (
+    "farms",
+    "equipments",
+    "field_jobs",
+    "service_reports",
+    "hands",
+    "supervisors",
+    "users",
+)
+PERMISSION_ACTIONS = ("create", "read", "update", "delete")
+ROLE_PERMISSIONS = {
+    USER_ROLE.AUD: {
+        f"{resource}:read"
+        for resource in (
+            "farms",
+            "equipments",
+            "field_jobs",
+            "service_reports",
+            "hands",
+            "supervisors",
+        )
+    },
+    USER_ROLE.FH: {
+        f"{resource}:read"
+        for resource in (
+            "farms",
+            "equipments",
+            "field_jobs",
+            "service_reports",
+            "hands",
+            "supervisors",
+        )
+    } | {
+        "equipments:update",
+        "field_jobs:update",
+        "service_reports:create",
+    },
+    USER_ROLE.FOA: {
+        f"{resource}:{action}"
+        for resource in PERMISSION_RESOURCES
+        for action in PERMISSION_ACTIONS
+    },
+}
+
+async def seed_permissions(session: AsyncSession) -> None:
+    permissions = {
+        permission.name: permission
+        for permission in (await session.scalars(select(Permission))).all()
+    }
+    new_permissions = {
+        name: Permission(
+            name=name,
+            description=f"{action.title()} {resource.replace('_', ' ')}",
+        )
+        for resource in PERMISSION_RESOURCES
+        for action in PERMISSION_ACTIONS
+        for name in (f"{resource}:{action}",)
+        if name not in permissions
+    }
+    permissions.update(new_permissions)
+    session.add_all(new_permissions.values())
+    await session.flush()
+
+    assigned = set(
+        (
+            await session.execute(
+                select(RolePermission.role, Permission.name)
+                .join(Permission)
+            )
+        ).all()
+    )
+    new_assignments = []
+    for role, permission_names in ROLE_PERMISSIONS.items():
+        for name in permission_names:
+            assignment = (role.value, name)
+            if assignment not in assigned:
+                new_assignments.append(
+                    RolePermission(
+                        role=role.value,
+                        permission_id=permissions[name].id,
+                    )
+                )
+
+    session.add_all(new_assignments)
+
 async def seed_tables() -> None:
     async with AsyncSessionLocal() as session:
+        await seed_permissions(session)
+
         session.add_all([
             User(username="admin", hashed_password=encrypt_password("Admin123!"), role=USER_ROLE.FOA),
             User(username="field_hand", hashed_password=encrypt_password("FieldHand123!"), role=USER_ROLE.FH),

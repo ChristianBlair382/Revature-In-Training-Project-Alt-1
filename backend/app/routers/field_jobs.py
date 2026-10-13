@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, status, Depends, Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.dependencies import get_db, get_current_user, require_role
+from app.dependencies import get_db, get_current_user, require_role, require_permission
 from app.orm_models import (
     Field_Job,
     FIELD_JOB_STATUS, 
@@ -28,7 +28,7 @@ router = APIRouter(prefix="/field_jobs", tags=["field_jobs"])
 @router.get("", response_model=list[Field_Job_Read])
 async def list_field_jobs(
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(get_current_user)
+    _: User = Depends(require_permission("field_jobs:read"))
 ):
     db_command = select(Field_Job).order_by(Field_Job.id)
 
@@ -40,7 +40,7 @@ async def list_field_jobs(
 async def isolate_colocation_discrepencies(
     priority: FIELD_JOB_PRIORITY | None = None,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(get_current_user)
+    _: User = Depends(require_permission("field_jobs:read"))
 ):
     db_command = (
         select(
@@ -67,7 +67,7 @@ async def isolate_colocation_discrepencies(
 async def find_field_job_by_id(
     field_job_id: int,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(get_current_user)
+    _: User = Depends(require_permission("field_jobs:read"))
 ):
     target_field_job = await db.get(Field_Job, field_job_id)
 
@@ -85,7 +85,7 @@ async def update_field_job_status(
     field_job_id: int,
     payload: Field_Job_Update_Status,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(require_role(USER_ROLE.FOA, USER_ROLE.FH))
+    _: User = Depends(require_permission("field_jobs:update"))
 ):
     target_field_job = await db.get(Field_Job, field_job_id)
     if (not target_field_job):
@@ -105,7 +105,7 @@ async def update_field_job_priority(
     field_job_id: int,
     payload: Field_Job_Update_Priority,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(require_role(USER_ROLE.FOA, USER_ROLE.FH))
+    _: User = Depends(require_permission("field_jobs:update"))
 ):
     target_field_job = await db.get(Field_Job, field_job_id)
     if (not target_field_job):
@@ -125,7 +125,7 @@ async def update_field_job(
     field_job_id: int,
     payload: Field_Job_Update,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(require_role(USER_ROLE.FOA))
+    _: User = Depends(require_permission("field_jobs:update"))
 ):
     target_field_job = await db.get(Field_Job, field_job_id)
     if (not target_field_job):
@@ -148,7 +148,7 @@ async def update_field_job(
 async def create_new_field_job(
     payload: Field_Job_Create,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(require_role(USER_ROLE.FOA))
+    _: User = Depends(require_permission("field_jobs:create"))
 ):
     new_field_job = Field_Job(**payload.model_dump())
     db.add(new_field_job)
@@ -162,7 +162,7 @@ async def create_new_field_job(
 async def delete_field_job(
     target_field_job_id: int,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(require_role(USER_ROLE.FOA))
+    _: User = Depends(require_permission("field_jobs:delete"))
 ):
     target_field_job = await db.get(Field_Job, target_field_job_id)
     if (not target_field_job):

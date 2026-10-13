@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, status, Depends, Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.dependencies import get_db, get_current_user, require_role
+from app.dependencies import get_db, get_current_user, require_role, require_permission
 from app.orm_models import Hand, User, USER_ROLE
 from app.schemas import Hand_Create, Hand_Read, Hand_Update
 
@@ -13,7 +13,7 @@ router = APIRouter(prefix="/hands", tags=["hands"])
 @router.get("", response_model=list[Hand_Read])
 async def list_hands(
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(get_current_user)
+    _: User = Depends(require_permission("hands:read"))
 ):
     db_command = select(Hand).order_by(Hand.id)
 
@@ -25,7 +25,7 @@ async def list_hands(
 async def find_hand_by_id(
     hand_id: int,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(get_current_user)
+    _: User = Depends(require_permission("hands:read"))
 ):
     target_hand = await db.get(Hand, hand_id)
 
@@ -43,7 +43,7 @@ async def update_hand(
     hand_id: int,
     payload: Hand_Update,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(get_current_user)
+    _: User = Depends(require_permission("hands:update"))
 ):
     target_hand = await db.get(Hand, hand_id)
     if (not target_hand):
@@ -66,7 +66,7 @@ async def update_hand(
 async def create_new_hand(
     payload: Hand_Create,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(require_role(USER_ROLE.FOA))
+    _: User = Depends(require_permission("hands:create"))
 ):
     new_hand = Hand(**payload.model_dump())
     db.add(new_hand)
@@ -80,7 +80,7 @@ async def create_new_hand(
 async def delete_hand(
     target_hand_id: int,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(require_role(USER_ROLE.FOA))
+    _: User = Depends(require_permission("hands:delete"))
 ):
     target_hand = await db.get(Hand, target_hand_id)
     if (not target_hand):

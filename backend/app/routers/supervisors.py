@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, status, Depends, Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.dependencies import get_db, get_current_user, require_role
+from app.dependencies import get_db, get_current_user, require_role, require_permission
 from app.orm_models import Supervisor, User, USER_ROLE
 from app.schemas import Supervisor_Create, Supervisor_Read, Supervisor_Update
 
@@ -13,7 +13,7 @@ router = APIRouter(prefix="/supervisors", tags=["supervisors"])
 @router.get("", response_model=list[Supervisor_Read])
 async def list_supervisors(
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(get_current_user)
+    _: User = Depends(require_permission("supervisors:read"))
 ):
     db_command = select(Supervisor).order_by(Supervisor.id)
 
@@ -25,7 +25,7 @@ async def list_supervisors(
 async def find_supervisor_by_id(
     supervisor_id: int,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(get_current_user)
+    _: User = Depends(require_permission("supervisors:read"))
 ):
     target_supervisor = await db.get(Supervisor, supervisor_id)
 
@@ -43,7 +43,7 @@ async def update_supervisor(
     supervisor_id: int,
     payload: Supervisor_Update,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(require_role(USER_ROLE.FOA))
+    _: User = Depends(require_permission("supervisors:update"))
 ):
     target_supervisor = await db.get(Supervisor, supervisor_id)
     if (not target_supervisor):
@@ -66,7 +66,7 @@ async def update_supervisor(
 async def create_new_supervisor(
     payload: Supervisor_Create,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(require_role(USER_ROLE.FOA))
+    _: User = Depends(require_permission("supervisors:create"))
 ):
     new_supervisor = Supervisor(**payload.model_dump())
     db.add(new_supervisor)
@@ -80,7 +80,7 @@ async def create_new_supervisor(
 async def delete_supervisor(
     target_supervisor_id: int,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(require_role(USER_ROLE.FOA))
+    _: User = Depends(require_permission("supervisors:delete"))
 ):
     target_supervisor = await db.get(Supervisor, target_supervisor_id)
     if (not target_supervisor):

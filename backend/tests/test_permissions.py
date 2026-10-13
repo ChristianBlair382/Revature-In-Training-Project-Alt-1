@@ -1,0 +1,66 @@
+import pytest
+from fastapi import HTTPException
+from sqlalchemy import select
+
+from app.dependencies import require_permission
+from app.orm_models import Permission, RolePermission, USER_ROLE
+from scripts.seed_tables import seed_permissions
+
+
+async def test_seed_permissions_creates_catalog_and_role_assignments(db_session):
+    await seed_permissions(db_session)
+    await db_session.flush()
+    await seed_permissions(db_session)
+    await db_session.flush()
+
+    permission_names = (
+        await db_session.execute(select(Permission.name))
+    ).scalars().all()
+    role_assignments = (
+        await db_session.execute(
+            select(RolePermission.role, Permission.name).join(Permission)
+        )
+    ).all()
+
+    assert len(permission_names) == 28
+    assert len(role_assignments) == 43
+    assert (USER_ROLE.FH.value, "field_jobs:update") in role_assignments
+    assert (USER_ROLE.FOA.value, "farms:create") in role_assignments
+    assert (USER_ROLE.FOA.value, "users:delete") in role_assignments
+
+
+async def test_permission_checker_allows_assigned_permission(db_session, seeded_users):
+    permission = Permission(name="farms:create")
+    db_session.add(permission)
+    await db_session.flush()
+    db_session.add(
+        RolePermission(
+            role=USER_ROLE.FOA.value,
+            permission_id=permission.id,
+        )
+    )
+    await db_session.commit()
+
+    checker = require_permission("farms:create")
+    result = await checker(current_user=seeded_users["admin"], db=db_session)
+
+    assert result is seeded_users["admin"]
+
+
+async def test_permission_checker_denies_unassigned_permission(db_session, seeded_users):
+    permission = Permission(name="farms:create")
+    db_session.add(permission)
+    await db_session.flush()
+    db_session.add(
+        RolePermission(
+            role=USER_ROLE.FOA.value,
+            permission_id=permission.id,
+        )
+    )
+    await db_session.commit()
+
+    checker = require_permission("farms:delete")
+    with pytest.raises(HTTPException) as exc_info:
+        await checker(current_user=seeded_users["admin"], db=db_session)
+
+    assert exc_info.value.status_code == 403

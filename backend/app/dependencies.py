@@ -8,7 +8,7 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.orm_models import User, USER_ROLE
+from app.orm_models import Permission, RolePermission, User, USER_ROLE
 from app.security import decode_access_token
 
 from .database import AsyncSessionLocal
@@ -53,3 +53,27 @@ def require_role(*allowed_roles: USER_ROLE) -> None:
             )
         return current_user
     return role_checker
+
+def require_permission(*allowed_permissions: str) -> None:
+    async def permission_checker(
+            current_user: User = Depends(get_current_user),
+            db: AsyncSession = Depends(get_db),
+    ) -> User:
+        result = await db.execute(
+            select(Permission.id)
+            .join(RolePermission)
+            .where(
+                RolePermission.role == current_user.role.value,
+                Permission.name.in_(allowed_permissions),
+            )
+            .limit(1)
+        )
+
+        if result.scalar_one_or_none() is None:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"User does not have '{allowed_permissions}' permission to perform this action.",
+            )
+        return current_user
+
+    return permission_checker

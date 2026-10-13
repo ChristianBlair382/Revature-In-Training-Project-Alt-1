@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, status, Depends, Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.dependencies import get_db, get_current_user, require_role
+from app.dependencies import get_db, get_current_user, require_role, require_permission
 from app.orm_models import Equipment, EQUIPMENT_STATUS, User, USER_ROLE
 from app.schemas import Equipment_Create, Equipment_Read, Equipment_Update_Status, Equipment_Update
 
@@ -13,7 +13,7 @@ router = APIRouter(prefix="/equipments", tags=["equipments"])
 @router.get("", response_model=list[Equipment_Read])
 async def list_equipments(
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(get_current_user)
+    _: User = Depends(require_permission("equipments:read"))
 ):
     db_command = select(Equipment).order_by(Equipment.id)
 
@@ -25,7 +25,7 @@ async def list_equipments(
 async def find_equipment_by_id(
     equipment_id: int,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(get_current_user)
+    _: User = Depends(require_permission("equipments:read"))
 ):
     target_equipment = await db.get(Equipment, equipment_id)
 
@@ -43,7 +43,7 @@ async def update_equipment_status(
     target_equipment_id: int,
     payload: Equipment_Update_Status,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(require_role(USER_ROLE.FOA, USER_ROLE.FH))
+    _: User = Depends(require_permission("equipments:update"))
 ):
     target_equipment = await db.get(Equipment, target_equipment_id)
     if (not target_equipment):
@@ -63,7 +63,7 @@ async def update_equipment(
     target_equipment_id: int,
     payload: Equipment_Update,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(require_role(USER_ROLE.FOA))
+    _: User = Depends(require_permission("equipments:update"))
 ):
     target_equipment = await db.get(Equipment, target_equipment_id)
     if (not target_equipment):
@@ -86,7 +86,7 @@ async def update_equipment(
 async def create_new_equipment(
     payload: Equipment_Create,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(require_role(USER_ROLE.FOA))
+    _: User = Depends(require_permission("equipments:create"))
 ):
     new_equipment = Equipment(**payload.model_dump())
     db.add(new_equipment)
@@ -100,7 +100,7 @@ async def create_new_equipment(
 async def delete_equipment(
     target_equipment_id: int,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(require_role(USER_ROLE.FOA))
+    _: User = Depends(require_permission("equipments:delete"))
 ):
     target_equipment = await db.get(Equipment, target_equipment_id)
     if (not target_equipment):

@@ -2,7 +2,7 @@ from fastapi import HTTPException, status, APIRouter, Depends, Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.dependencies import get_db, get_current_user, require_role
+from app.dependencies import get_db, get_current_user, require_role, require_permission
 from app.orm_models import Farm, User, USER_ROLE
 from app.schemas import Farm_Create, Farm_Read, Farm_Update
 
@@ -11,7 +11,7 @@ router = APIRouter(prefix="/farms", tags=["farms"])
 @router.get("", response_model=list[Farm_Read])
 async def list_farms(
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(get_current_user)
+    _: User = Depends(require_permission("farms:read"))
 ):
     db_command = select(Farm).order_by(Farm.id)
 
@@ -23,7 +23,7 @@ async def list_farms(
 async def find_farm_by_id(
     farm_id: int,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(get_current_user)
+    _: User = Depends(require_permission("farms:read"))
 ):
     target_farm = await db.get(Farm, farm_id)
 
@@ -39,7 +39,7 @@ async def update_farm(
     farm_id: int,
     payload: Farm_Update,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(require_role(USER_ROLE.FOA))
+    _: User = Depends(require_permission("farms:update"))
 ):
     target_farm = await db.get(Farm, farm_id)
     if (not target_farm):
@@ -60,7 +60,7 @@ async def update_farm(
 async def create_new_farm(
     payload: Farm_Create,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(require_role(USER_ROLE.FOA))
+    _: User = Depends(require_permission("farms:create"))
 ):
     new_farm = Farm(**payload.model_dump())
     db.add(new_farm)
@@ -72,7 +72,7 @@ async def create_new_farm(
 async def delete_farm(
     farm_id: int,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(require_role(USER_ROLE.FOA))
+    _: User = Depends(require_permission("farms:delete"))
 ):
     target_farm = await db.get(Farm, farm_id)
     if (not target_farm):

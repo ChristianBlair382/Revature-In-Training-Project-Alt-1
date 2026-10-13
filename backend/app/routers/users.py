@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, status, Depends, Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.dependencies import get_db, get_current_user, require_role
+from app.dependencies import get_db, get_current_user, require_role, require_permission
 from app.orm_models import User, USER_ROLE
 from app.routers.auth import register_new_user
 from app.schemas import User_Read, User_Update
@@ -14,7 +14,7 @@ router = APIRouter(prefix="/users", tags=["users"])
 @router.get("", response_model=list[User_Read])
 async def list_users(
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(get_current_user)
+    _: User = Depends(require_permission("users:read"))
 ):
     db_command = select(User).order_by(User.id)
 
@@ -26,7 +26,7 @@ async def list_users(
 async def find_user_by_id(
     user_id: int,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(get_current_user)
+    _: User = Depends(require_permission("users:read"))
 ):
     target_user = await db.get(User, user_id)
 
@@ -44,7 +44,7 @@ async def update_user(
     user_id: int,
     payload: User_Update,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(get_current_user)
+    _: User = Depends(require_permission("users:update"))
 ):
     target_user = await db.get(User, user_id)
     if (not target_user):
@@ -77,7 +77,7 @@ router.add_api_route(
 async def delete_user(
     target_user_id: int,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(require_role(USER_ROLE.FOA))
+    _: User = Depends(require_permission("users:delete"))
 ):
     target_user = await db.get(User, target_user_id)
     if (not target_user):

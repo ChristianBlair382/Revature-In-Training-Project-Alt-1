@@ -8,7 +8,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.concurrency import run_in_threadpool
 
-from app.dependencies import get_db, require_role
+from app.dependencies import get_db, require_role, require_permission
 from app.orm_models import User, USER_ROLE
 
 from .routers import auth, equipments, farms, field_jobs, hands, service_reports, supervisors, users
@@ -57,7 +57,7 @@ async def health_readiness_check(
 @app.get("/health/detail", tags=["health"])
 async def health_readiness_check(
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(require_role(USER_ROLE.FOA))
+    _: User = Depends(require_permission("users:read"))
 ) -> JSONResponse:
     checks = {
         "database": {

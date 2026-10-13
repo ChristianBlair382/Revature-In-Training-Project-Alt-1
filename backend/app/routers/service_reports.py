@@ -6,7 +6,7 @@ from starlette.concurrency import run_in_threadpool
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.dependencies import get_db, get_current_user, require_role
+from app.dependencies import get_db, get_current_user, require_role, require_permission
 from app.orm_models import Service_Report, User, USER_ROLE
 from app.schemas import Service_Report_Create, Service_Report_Read, Service_Report_Update
 from scripts.upload_service_report import upload_to_s3
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 @router.get("", response_model=list[Service_Report_Read])
 async def list_service_reports(
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(get_current_user)
+    _: User = Depends(require_permission("service_reports:read"))
 ):
     db_command = select(Service_Report).order_by(Service_Report.id)
 
@@ -31,7 +31,7 @@ async def list_service_reports(
 @router.get("/verification")
 async def verify_service_report_uploads(
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(get_current_user),
+    _: User = Depends(require_permission("service_reports:read")),
 ) -> list[dict[str, int | bool]]:
     output = await db.execute(select(Service_Report).order_by(Service_Report.id))
     reports = list(output.scalars().all())
@@ -57,7 +57,7 @@ async def verify_service_report_uploads(
 async def find_service_report_by_id(
     service_report_id: int,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(get_current_user)
+    _: User = Depends(require_permission("service_reports:read"))
 ):
     target_service_report = await db.get(Service_Report, service_report_id)
 
@@ -75,7 +75,7 @@ async def update_service_report(
     service_report_id: int,
     payload: Service_Report_Update,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(require_role(USER_ROLE.FOA, USER_ROLE.FH))
+    _: User = Depends(require_permission("service_reports:update"))
 ):
     target_service_report = await db.get(Service_Report, service_report_id)
     if (not target_service_report):
@@ -98,7 +98,7 @@ async def update_service_report(
 async def create_new_service_report(
     payload: Service_Report_Create,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(require_role(USER_ROLE.FOA, USER_ROLE.FH))
+    _: User = Depends(require_permission("service_reports:create"))
 ):
     new_service_report = Service_Report(**payload.model_dump())
     db.add(new_service_report)
@@ -109,7 +109,7 @@ async def create_new_service_report(
 @router.post("/upload", status_code=status.HTTP_201_CREATED)
 async def upload_service_report_file(
     file: UploadFile = File(...),
-    _: User = Depends(require_role(USER_ROLE.FOA, USER_ROLE.FH)),
+    _: User = Depends(require_permission("service_reports:create")),
 ) -> dict[str, str]:
     if not file.filename:
         raise HTTPException(
@@ -144,7 +144,7 @@ async def upload_service_report_file(
 async def delete_service_report(
     service_report_id: int,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(require_role(USER_ROLE.FOA))
+    _: User = Depends(require_permission("service_reports:delete"))
 ):
     target_service_report = await db.get(Service_Report, service_report_id)
     if (not target_service_report):
