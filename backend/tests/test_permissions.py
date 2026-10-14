@@ -5,6 +5,7 @@ from sqlalchemy import select
 from app.dependencies import require_permission
 from app.orm_models import Permission, RolePermission, USER_ROLE
 from scripts.seed_tables import seed_permissions
+from tests.conftest import auth_header
 
 
 async def test_seed_permissions_creates_catalog_and_role_assignments(db_session):
@@ -64,3 +65,37 @@ async def test_permission_checker_denies_unassigned_permission(db_session, seede
         await checker(current_user=seeded_users["admin"], db=db_session)
 
     assert exc_info.value.status_code == 403
+
+
+async def test_current_user_can_read_only_their_role_permissions(
+    client,
+    db_session,
+    seeded_users,
+):
+    permission = Permission(name="farms:read", description="Read farms")
+    db_session.add(permission)
+    await db_session.flush()
+    db_session.add(
+        RolePermission(
+            role=USER_ROLE.FOA.value,
+            permission_id=permission.id,
+        )
+    )
+    await db_session.commit()
+
+    response = await client.get(
+        "/users/me/permissions",
+        headers=auth_header(seeded_users["admin"]),
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "role": USER_ROLE.FOA.value,
+        "permissions": [{"name": "farms:read", "description": "Read farms"}],
+    }
+
+
+async def test_current_user_permissions_requires_authentication(client):
+    response = await client.get("/users/me/permissions")
+
+    assert response.status_code == 401

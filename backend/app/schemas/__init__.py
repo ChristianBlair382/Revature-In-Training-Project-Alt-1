@@ -16,7 +16,15 @@ from .field_job import (
 )
 from .service_report import Service_Report_Create, Service_Report_Read, Service_Report_Update
 from .supervisor import Supervisor_Create, Supervisor_Read, Supervisor_Update
-from .user import User_Create, User_Read, User_Update, Token, Refresh_Token_Request
+from .user import (
+    User_Create,
+    User_Read,
+    User_Update,
+    User_Permissions_Read,
+    Permission_Read,
+    Token,
+    Refresh_Token_Request,
+)
 
 __all__ = [
     "Farm_Create", "Farm_Read", "Farm_Update",
@@ -26,5 +34,6 @@ __all__ = [
     "Field_Job_Update_Status", "Field_Job_Update_Priority", "Field_Job_Update",
     "Service_Report_Create", "Service_Report_Read", "Service_Report_Update", 
     "Supervisor_Create", "Supervisor_Read", "Supervisor_Update",
-    "User_Create", "User_Read", "User_Update", "Token", "Refresh_Token_Request"
+    "User_Create", "User_Read", "User_Update", "User_Permissions_Read",
+    "Permission_Read", "Token", "Refresh_Token_Request"
 ]

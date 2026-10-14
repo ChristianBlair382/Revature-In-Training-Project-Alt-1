@@ -8,6 +8,10 @@ import {
   Card,
   CardContent,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   List,
   ListItem,
   ListItemIcon,
@@ -43,6 +47,10 @@ function Dashboard({mode, onToggleColorMode}) {
   const {user, logout} = useAuth()
   const [notification, setNotification] = useState('')
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [permissionsDialogOpen, setPermissionsDialogOpen] = useState(false)
+  const [rolePermissions, setRolePermissions] = useState(null)
+  const [permissionsLoading, setPermissionsLoading] = useState(false)
+  const [permissionsError, setPermissionsError] = useState('')
   const [selectedPage, setSelectedPage] = useState('summaries')
   const [completionSummary, setCompletionSummary] = useState([])
   const [completionSummaryLoading, setCompletionSummaryLoading] = useState(true)
@@ -61,6 +69,12 @@ function Dashboard({mode, onToggleColorMode}) {
   };
   const displaySelectedPage = (string) => () => {
     setSelectedPage(string)
+  }
+  const openPermissionsDialog = () => {
+    setPermissionsLoading(true);
+    setPermissionsError('');
+    setRolePermissions(null);
+    setPermissionsDialogOpen(true);
   }
   
 
@@ -141,16 +155,49 @@ function Dashboard({mode, onToggleColorMode}) {
         sx={{
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'flex-center',
+          alignItems: 'stretch',
           mt: 'auto'
         }}
       >
-        <Typography sx={{ mr: 2 }}>{user?.sub} </Typography>
-        <Typography sx={{ fontSize: 10 }}>{user?.role}</Typography>
+        <ListItemButton
+          onClick={openPermissionsDialog}
+          aria-haspopup="dialog"
+          aria-label={`View role and permissions for ${user?.sub}`}
+        >
+          <ListItemText
+            primary={user?.sub}
+            secondary={user?.role?.replace(/_/g, ' ')}
+          />
+        </ListItemButton>
         <Button sx={{bgcolor: 'background.secondary'}} color="inherit" onClick={logout}>Log Out</Button>
       </Box>
     </Box>
   );
+
+  useEffect(() => {
+    if (!permissionsDialogOpen) return undefined;
+
+    let cancelled = false;
+
+    apiClient.get('/users/me/permissions')
+      .then((response) => {
+        if (!cancelled) setRolePermissions(response.data);
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setPermissionsError(
+            error.response?.data?.detail ?? 'Could not load your permissions.'
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setPermissionsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [permissionsDialogOpen]);
 
   useEffect(() => {
     let cancelled = false;
@@ -288,6 +335,43 @@ function Dashboard({mode, onToggleColorMode}) {
       <Drawer open={drawerOpen} onClose={toggleDrawer(false)}>
         {DrawerList}
       </Drawer>
+      <Dialog
+        open={permissionsDialogOpen}
+        onClose={() => setPermissionsDialogOpen(false)}
+        fullWidth
+        maxWidth="sm"
+        aria-labelledby="role-permissions-dialog-title"
+      >
+        <DialogTitle id="role-permissions-dialog-title">
+          {user.sub}
+        </DialogTitle>
+        <DialogContent dividers>
+          <Typography variant="subtitle1" sx={{mb: 1}}>
+            Role: {(rolePermissions?.role ?? user?.role)?.replace(/_/g, ' ')}
+          </Typography>
+          {permissionsLoading ? (
+            <CircularProgress size={24} aria-label="Loading permissions" />
+          ) : permissionsError ? (
+            <Alert severity="error">{permissionsError}</Alert>
+          ) : rolePermissions?.permissions?.length ? (
+            <List disablePadding>
+              {rolePermissions.permissions.map(({name, description}) => (
+                <ListItem key={name} divider disableGutters>
+                  <ListItemText
+                    primary={name}
+                    secondary={description}
+                  />
+                </ListItem>
+              ))}
+            </List>
+          ) : (
+            <Typography>No permissions are assigned to this role.</Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPermissionsDialogOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
       {selectedPage === 'summaries' && (
         <Box sx={{display: 'grid', gridTemplateColumns: {xs: '1fr', md: 'repeat(3, minmax(0, 1fr))'}, gap: 2, px: 3, py: 2, padding: 4}}>
           <Card variant="outlined">

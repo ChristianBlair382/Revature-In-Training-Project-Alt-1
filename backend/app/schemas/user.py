@@ -13,6 +13,15 @@ class User_Read(User_Base):
     id: int
     model_config = ConfigDict(from_attributes=True)
 
+class Permission_Read(BaseModel):
+    name: str
+    description: str | None = None
+    model_config = ConfigDict(from_attributes=True)
+
+class User_Permissions_Read(BaseModel):
+    role: USER_ROLE
+    permissions: list[Permission_Read]
+
 class User_Update(BaseModel):
     username: str | None = Field(default=None, min_length=1, max_length=50)
     password: str = Field(min_length=8)

@@ -3,13 +3,29 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies import get_db, get_current_user, require_role, require_permission
-from app.orm_models import User, USER_ROLE
+from app.orm_models import Permission, RolePermission, User, USER_ROLE
 from app.routers.auth import register_new_user
-from app.schemas import User_Read, User_Update
+from app.schemas import User_Permissions_Read, User_Read, User_Update
 
 router = APIRouter(prefix="/users", tags=["users"])
 
 # GET Routers
+
+@router.get("/me/permissions", response_model=User_Permissions_Read)
+async def get_my_permissions(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> User_Permissions_Read:
+    result = await db.execute(
+        select(Permission)
+        .join(RolePermission)
+        .where(RolePermission.role == current_user.role.value)
+        .order_by(Permission.name)
+    )
+    return User_Permissions_Read(
+        role=current_user.role,
+        permissions=result.scalars().all(),
+    )
 
 @router.get("", response_model=list[User_Read])
 async def list_users(
