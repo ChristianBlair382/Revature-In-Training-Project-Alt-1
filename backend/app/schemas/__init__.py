@@ -21,6 +21,7 @@ from .user import (
     User_Read,
     User_Update,
     User_Permissions_Read,
+    Role_Permissions_Read,
     Permission_Read,
     Token,
     Refresh_Token_Request,
@@ -35,5 +36,5 @@ __all__ = [
     "Service_Report_Create", "Service_Report_Read", "Service_Report_Update", 
     "Supervisor_Create", "Supervisor_Read", "Supervisor_Update",
     "User_Create", "User_Read", "User_Update", "User_Permissions_Read",
-    "Permission_Read", "Token", "Refresh_Token_Request"
+    "Role_Permissions_Read", "Permission_Read", "Token", "Refresh_Token_Request"
 ]

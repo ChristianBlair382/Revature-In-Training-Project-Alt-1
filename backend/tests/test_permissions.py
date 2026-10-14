@@ -72,14 +72,18 @@ async def test_current_user_can_read_only_their_role_permissions(
     db_session,
     seeded_users,
 ):
-    permission = Permission(name="farms:read", description="Read farms")
-    db_session.add(permission)
+    permissions = [
+        Permission(name="users:read", description="Read users"),
+        Permission(name="farms:read", description="Read farms"),
+    ]
+    db_session.add_all(permissions)
     await db_session.flush()
-    db_session.add(
+    db_session.add_all(
         RolePermission(
             role=USER_ROLE.FOA.value,
             permission_id=permission.id,
         )
+        for permission in permissions
     )
     await db_session.commit()
 
@@ -89,9 +93,11 @@ async def test_current_user_can_read_only_their_role_permissions(
     )
 
     assert response.status_code == 200
-    assert response.json() == {
-        "role": USER_ROLE.FOA.value,
-        "permissions": [{"name": "farms:read", "description": "Read farms"}],
+    response_body = response.json()
+    assert response_body["role"] == USER_ROLE.FOA.value
+    assert {permission["name"] for permission in response_body["permissions"]} == {
+        "users:read",
+        "farms:read",
     }
 
 
@@ -99,3 +105,50 @@ async def test_current_user_permissions_requires_authentication(client):
     response = await client.get("/users/me/permissions")
 
     assert response.status_code == 401
+
+
+async def test_admin_can_list_permissions_for_each_role(
+    client,
+    db_session,
+    seeded_users,
+):
+    permissions = [
+        Permission(name="users:read", description="Read users"),
+        Permission(name="farms:read", description="Read farms"),
+    ]
+    db_session.add_all(permissions)
+    await db_session.flush()
+    db_session.add_all(
+        RolePermission(
+            role=USER_ROLE.FOA.value,
+            permission_id=permission.id,
+        )
+        for permission in permissions
+    )
+    await db_session.commit()
+
+    response = await client.get(
+        "/users/roles-permissions",
+        headers=auth_header(seeded_users["admin"]),
+    )
+
+    assert response.status_code == 200
+    result = {row["role"]: row["permissions"] for row in response.json()}
+    assert {permission["name"] for permission in result[USER_ROLE.FOA.value]} == {
+        "users:read",
+        "farms:read",
+    }
+    assert result[USER_ROLE.FH.value] == []
+    assert result[USER_ROLE.AUD.value] == []
+
+
+async def test_role_permissions_list_requires_users_read(
+    client,
+    seeded_users,
+):
+    response = await client.get(
+        "/users/roles-permissions",
+        headers=auth_header(seeded_users["field_hand"]),
+    )
+
+    assert response.status_code == 403

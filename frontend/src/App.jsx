@@ -33,6 +33,7 @@ import ServiceReportsDataGrid from "./components/service_reports/ServiceReportsD
 import HandsDataGrid from "./components/hands/HandsDataGrid.jsx";
 import SupervisorsDataGrid from "./components/supervisors/SupervisorsDataGrid.jsx";
 import UsersDataGrid from "./components/users/UsersDataGrid.jsx";
+import RolesAndPermissionsDataGrid from "./components/users/RolesAndPermissionsDataGrid.jsx";
 
 import GridViewIcon from '@mui/icons-material/GridView';
 import WarehouseIcon from '@mui/icons-material/Warehouse';
@@ -547,6 +548,12 @@ function Dashboard({mode, onToggleColorMode}) {
             </Typography>
             <Box sx={{mb: 4}}>
               <UsersDataGrid onSuccess={handleGridSuccess}/>
+            </Box>
+            <Typography variant="h5" component="h2" gutterBottom>
+              Roles and Permissions
+            </Typography>
+            <Box sx={{mb: 4}}>
+              <RolesAndPermissionsDataGrid />
             </Box>
           </>
         }

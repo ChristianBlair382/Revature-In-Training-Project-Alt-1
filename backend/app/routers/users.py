@@ -2,10 +2,15 @@ from fastapi import APIRouter, HTTPException, status, Depends, Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.dependencies import get_db, get_current_user, require_role, require_permission
+from app.dependencies import get_db, get_current_user, require_permission
 from app.orm_models import Permission, RolePermission, User, USER_ROLE
 from app.routers.auth import register_new_user
-from app.schemas import User_Permissions_Read, User_Read, User_Update
+from app.schemas import (
+    Role_Permissions_Read,
+    User_Permissions_Read,
+    User_Read,
+    User_Update,
+)
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -26,6 +31,33 @@ async def get_my_permissions(
         role=current_user.role,
         permissions=result.scalars().all(),
     )
+
+@router.get(
+    "/roles-permissions",
+    response_model=list[Role_Permissions_Read],
+)
+async def list_role_permissions(
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(require_permission("users:read")),
+) -> list[Role_Permissions_Read]:
+    result = await db.execute(
+        select(RolePermission.role, Permission)
+        .join(Permission)
+        .order_by(RolePermission.role, Permission.name)
+    )
+    permissions_by_role: dict[str, list[Permission]] = {
+        role.value: [] for role in USER_ROLE
+    }
+    for role, permission in result:
+        permissions_by_role[role].append(permission)
+
+    return [
+        Role_Permissions_Read(
+            role=role,
+            permissions=permissions_by_role[role.value],
+        )
+        for role in USER_ROLE
+    ]
 
 @router.get("", response_model=list[User_Read])
 async def list_users(
