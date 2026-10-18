@@ -6,9 +6,9 @@ from pydantic import Field
 from pymongo import ASCENDING, IndexModel
 
 if TYPE_CHECKING:
-    from .equipment import Equipment
-    from .hand import Hand
-    from .supervisor import Supervisor
+    from .equipment_mongo import Equipment
+    from .hand_mongo import Hand
+    from .supervisor_mongo import Supervisor
 
 class Farm(Document):
     name: str = Field(min_length=1, max_length=50)
@@ -17,9 +17,11 @@ class Farm(Document):
 
     supervisor: Link["Supervisor"]
     equipments: list[BackLink["Equipment"]] = Field(
+        default_factory=list,
         json_schema_extra={"original_field": "farm"}
     )
     hands: list[BackLink["Hand"]] = Field(
+        default_factory=list,
         json_schema_extra={"original_field": "farm"}
     )
 
@@ -29,8 +31,10 @@ class Farm(Document):
             IndexModel([("name", ASCENDING)]),
         ]
 
-    def __repr__(self):
+    def __repr__(self) -> str:
+        supervisor = getattr(self.supervisor, "ref", self.supervisor)
         return (
             f"Farm (ID = {self.id}, Name = {self.name!r}, "
-            f"Capacity = {self.capacity})"
+            f"Location Region = {self.location_region!r}, "
+            f"Capacity = {self.capacity}, Supervisor ID = {supervisor.id})"
         )

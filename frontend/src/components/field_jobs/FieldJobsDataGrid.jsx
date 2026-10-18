@@ -139,8 +139,8 @@ export default function FieldJobsDataGrid({onSuccess}) {
         try {
             await apiClient.post('/field_jobs', {
                 ...form_values,
-                equipment_id: Number(form_values.equipment_id),
-                hand_id: Number(form_values.hand_id),
+                equipment_id: form_values.equipment_id,
+                hand_id: form_values.hand_id,
             });
 
             setDialogOpen(false);
@@ -177,8 +177,8 @@ export default function FieldJobsDataGrid({onSuccess}) {
             } else {
                 const response = await apiClient.patch(`/field_jobs/${selectedFieldJob.id}`, {
                     ...form_values,
-                    equipment_id: Number(form_values.equipment_id),
-                    hand_id: Number(form_values.hand_id),
+                    equipment_id: form_values.equipment_id,
+                    hand_id: form_values.hand_id,
                 });
                 updatedRow = response.data;
             }

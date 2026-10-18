@@ -1,7 +1,7 @@
 from beanie import PydanticObjectId
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.orm_models import USER_ROLE
+from app.orm_models.enums import USER_ROLE
 
 class User_Base(BaseModel):
     username: str = Field(min_length=1, max_length=50)
@@ -11,7 +11,6 @@ class User_Create(User_Base):
     password: str = Field(min_length=8)
 
 class User_Read(User_Base):
-    # For MongoDB, replace "int" in id, with PydanticObjectId, everything else remains the same
     id: PydanticObjectId
     model_config = ConfigDict(from_attributes=True)
 
@@ -30,7 +29,7 @@ class Role_Permissions_Read(BaseModel):
 
 class User_Update(BaseModel):
     username: str | None = Field(default=None, min_length=1, max_length=50)
-    password: str = Field(min_length=8)
+    password: str | None = Field(default=None, min_length=8)
     role: USER_ROLE | None = None
 
 class Token(BaseModel):

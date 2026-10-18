@@ -4,12 +4,11 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 
 from app.orm_models.enums import USER_ROLE
-from backend.app.orm_models.permission_mongo import RolePermission
-from backend.app.orm_models.user_mongo import User
+from app.orm_models.permission_mongo import RolePermission
+from app.orm_models.user_mongo import User
 from app.security import decode_access_token
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
-
 
 async def get_current_user(
     token: str = Depends(oauth2_scheme),
@@ -33,7 +32,6 @@ async def get_current_user(
         raise credentials_exception
     return user
 
-
 def require_role(*allowed_roles: USER_ROLE):
     async def role_checker(
         current_user: User = Depends(get_current_user),
@@ -49,7 +47,6 @@ def require_role(*allowed_roles: USER_ROLE):
         return current_user
 
     return role_checker
-
 
 def require_permission(*allowed_permissions: str):
     async def permission_checker(

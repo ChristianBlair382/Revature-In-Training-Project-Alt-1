@@ -132,7 +132,7 @@ export default function ServiceReportsDataGrid({onSuccess}) {
             const file_url = uploadResponse.data.file_url;
 
             await apiClient.post('/service_reports', {
-                field_job_id: Number(form_values.field_job_id),
+                field_job_id: form_values.field_job_id,
                 file_url,
                 notes: form_values.notes,
             });
@@ -157,7 +157,7 @@ export default function ServiceReportsDataGrid({onSuccess}) {
         try {
             const response = await apiClient.patch(`/service_reports/${selectedServiceReport.id}`, {
                 ...form_values,
-                field_job_id: Number(form_values.field_job_id),
+                field_job_id: form_values.field_job_id,
             });
             setServiceReports((currentServiceReports) => currentServiceReports.map((serviceReport) => (
                 serviceReport.id === selectedServiceReport.id ? response.data : serviceReport

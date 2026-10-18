@@ -6,6 +6,6 @@ class Settings(BaseSettings):
     frontend_origin: str = "http://localhost:5173"
     access_token_expire_time: int = 5
 
-    model_config = SettingsConfigDict(env_file=".env")
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 settings = Settings()

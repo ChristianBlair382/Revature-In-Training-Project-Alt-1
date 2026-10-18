@@ -104,7 +104,7 @@ export default function HandDataGrid({onSuccess}) {
         try {
             await apiClient.post('/hands', {
                 ...form_values,
-                farm_id: Number(form_values.farm_id),
+                farm_id: form_values.farm_id,
             });
 
             setDialogOpen(false);
@@ -124,7 +124,7 @@ export default function HandDataGrid({onSuccess}) {
         try {
             const response = await apiClient.patch(`/hands/${selectedHand.id}`, {
                 ...form_values,
-                farm_id: Number(form_values.farm_id),
+                farm_id: form_values.farm_id,
             });
             setHands((currentHands) => currentHands.map((hand) => (
                 hand.id === selectedHand.id ? response.data : hand

@@ -12,8 +12,16 @@ from app.database_mongo import (
     connect_to_mongo,
     ping_mongo,
 )
-from app.routers import mongo_users
-
+from app.routers import (
+    auth_mongo,
+    equipments_mongo,
+    farms_mongo,
+    field_jobs_mongo,
+    hands_mongo,
+    service_reports_mongo,
+    supervisors_mongo,
+    users_mongo,
+)
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
@@ -22,7 +30,6 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         yield
     finally:
         await close_mongo_connection()
-
 
 app = FastAPI(
     title="AgriCore",
@@ -39,11 +46,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 @app.get("/health", tags=["health"])
 async def health_check() -> dict[str, str]:
     return {"status": "OK"}
-
 
 @app.get("/health/ready", tags=["health"])
 async def health_readiness_check() -> JSONResponse:
@@ -60,10 +65,15 @@ async def health_readiness_check() -> JSONResponse:
         content={"status": "Database is currently reachable."},
     )
 
-
 @app.get("/version", tags=["version"])
 async def version_check() -> dict[str, str]:
     return {"version": app.version}
 
-
-app.include_router(mongo_users.router)
+app.include_router(auth_mongo.router)
+app.include_router(users_mongo.router)
+app.include_router(farms_mongo.router)
+app.include_router(equipments_mongo.router)
+app.include_router(hands_mongo.router)
+app.include_router(field_jobs_mongo.router)
+app.include_router(service_reports_mongo.router)
+app.include_router(supervisors_mongo.router)

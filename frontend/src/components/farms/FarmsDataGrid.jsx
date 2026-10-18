@@ -96,7 +96,7 @@ export default function FarmsDataGrid({onSuccess}) {
             await apiClient.post('/farms', {
                 ...form_values,
                 capacity: Number(form_values.capacity),
-                supervisor_id: Number(form_values.supervisor_id),
+                supervisor_id: form_values.supervisor_id,
             });
 
             setDialogOpen(false);
@@ -117,7 +117,7 @@ export default function FarmsDataGrid({onSuccess}) {
             const response = await apiClient.patch(`/farms/${selectedFarm.id}`, {
                 ...form_values,
                 capacity: Number(form_values.capacity),
-                supervisor_id: Number(form_values.supervisor_id),
+                supervisor_id: form_values.supervisor_id,
             });
             setFarms((currentFarms) => currentFarms.map((farm) => (
                 farm.id === selectedFarm.id ? response.data : farm

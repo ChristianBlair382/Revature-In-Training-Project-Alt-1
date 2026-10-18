@@ -142,7 +142,7 @@ export default function EquipmentsDataGrid({onSuccess}) {
             await apiClient.post('/equipments', {
                 ...form_values,
                 fuel_lvl: Number(form_values.fuel_lvl),
-                farm_id: Number(form_values.farm_id),
+                farm_id: form_values.farm_id,
             });
 
             setDialogOpen(false);
@@ -170,7 +170,7 @@ export default function EquipmentsDataGrid({onSuccess}) {
                 response = await apiClient.patch(`/equipments/${selectedEquipment.id}`, {
                     ...form_values,
                     fuel_lvl: Number(form_values.fuel_lvl),
-                    farm_id: Number(form_values.farm_id),
+                    farm_id: form_values.farm_id,
                 });
             }
 
